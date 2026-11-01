@@ -26,7 +26,7 @@ Built for the DEPI graduation project (Full Stack .NET track).
 |--------|----------------|
 | Mohamed Hany (Lead) | Setup, identity and login, admin, code review |
 | Mohamed Medhat | Teacher features: courses, lessons, videos |
-| Mohamed Ghamry | Exams: questions, attempts, grading |
+| Omar Ghamry | Exams: questions, attempts, grading |
 | Mohamed Hatem | Student, enrollment, parent, notifications |
 
 ## Repository Structure
