@@ -7,7 +7,7 @@ Base URL: `/api` — all endpoints except register/login require `Authorization:
 | Module | Method | Endpoint | Role | Description |
 |--------|--------|----------|------|-------------|
 | Auth | POST | `/auth/register` | Public | Register student or parent |
-| Auth | POST | `/auth/login` | Public | Login, returns JWT |
+| Auth | POST | `/auth/login` | Public | Login, returns Cookie Authentication |
 | Users | GET | `/users?role=` | Admin | List users |
 | Users | POST | `/users/teachers` | Admin | Create teacher account |
 | Users | PUT | `/users/{id}/status` | Admin | Activate / deactivate |
@@ -81,7 +81,7 @@ Response `201 Created`
 ## 13.3 Deployment Strategy
 - **Hosting:** ASP.NET Core API and React build on one host (for example Azure App Service or a Windows/Linux VPS); SQL Server on the same or a managed instance.
 - **Environments:** Development (local) and Production.
-- **Configuration:** connection string, JWT secret and upload path in environment variables / `appsettings.Production.json` (never committed).
+- **Configuration:** connection string, Cookie Authentication secret and upload path in environment variables / `appsettings.Production.json` (never committed).
 - **Pipeline:** GitHub Actions — build, run tests, publish artifacts on every push to `main`.
 - **Database:** EF Core migrations applied on deploy; daily backup.
 - **Scaling:** start with one instance; if needed move uploads to cloud blob storage and add a second API instance behind a load balancer.

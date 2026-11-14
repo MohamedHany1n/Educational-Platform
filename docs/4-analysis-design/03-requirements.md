@@ -60,7 +60,7 @@
 | Performance | NFR-01 | Normal pages respond in under 3 seconds with up to 200 concurrent users. |
 | Performance | NFR-02 | Lists (courses, requests, users) are paginated. |
 | Security | NFR-03 | Passwords are hashed (ASP.NET Core Identity / PBKDF2), never stored in plain text. |
-| Security | NFR-04 | API uses JWT authentication and role-based authorization. |
+| Security | NFR-04 | API uses Cookie authentication and role-based authorization. |
 | Security | NFR-05 | Uploaded receipts accept only image types (jpg, png) up to 5 MB and are renamed on the server; only the Admin and the owner can view them. |
 | Security | NFR-06 | All input is validated on the server; EF Core parameterized queries prevent SQL injection. |
 | Security | NFR-07 | Communication uses HTTPS. |

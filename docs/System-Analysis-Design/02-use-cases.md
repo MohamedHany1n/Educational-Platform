@@ -76,7 +76,7 @@ flowchart LR
 |-------|-------------|
 | Actors | All |
 | Precondition | Account exists and is active |
-| Main flow | 1. User enters email and password. 2. System validates credentials. 3. System issues a JWT token. 4. User is redirected to the dashboard of their role. |
+| Main flow | 1. User enters email and password. 2. System validates credentials. 3. System issues a authenticated session cookie. 4. User is redirected to the dashboard of their role. |
 | Alternative | Invalid credentials → error message; account disabled → access denied |
 | Postcondition | User is authenticated |
 

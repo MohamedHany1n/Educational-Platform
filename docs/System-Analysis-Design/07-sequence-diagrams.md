@@ -5,7 +5,7 @@
 ```mermaid
 sequenceDiagram
     actor U as User
-    participant FE as React App
+    participant FE as Browser (Razor View)
     participant API as AuthController
     participant SV as AuthService
     participant DB as SQL Server
@@ -17,7 +17,7 @@ sequenceDiagram
     DB-->>SV: User record
     SV->>SV: Verify password hash and IsActive
     alt valid
-        SV-->>API: JWT token and role
+        SV-->>API: authenticated session cookie and role
         API-->>FE: 200 OK
         FE-->>U: Redirect to role dashboard
     else invalid
@@ -33,7 +33,7 @@ sequenceDiagram
 sequenceDiagram
     actor S as Student
     actor A as Admin
-    participant FE as React App
+    participant FE as Browser (Razor View)
     participant API as PaymentRequestsController
     participant SV as PaymentService
     participant FS as File Storage
@@ -70,7 +70,7 @@ sequenceDiagram
 sequenceDiagram
     actor S as Student
     actor T as Teacher
-    participant FE as React App
+    participant FE as Browser (Razor View)
     participant API as ExamsController
     participant SV as ExamService
     participant DB as SQL Server
