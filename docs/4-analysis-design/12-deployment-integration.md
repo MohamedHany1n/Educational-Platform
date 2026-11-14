@@ -4,8 +4,8 @@
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React, React Router, Axios |
-| Backend | ASP.NET Core Web API (C#), JWT authentication |
+| Frontend | Razor Views, Bootstrap 5, jQuery Validation |
+| Backend | ASP.NET Core MVC (C#), Cookie authentication |
 | ORM | Entity Framework Core (Code-First, migrations) |
 | Database | SQL Server |
 | File storage | Server file system (receipts, thumbnails) |
@@ -17,13 +17,12 @@
 ```mermaid
 flowchart LR
     subgraph Client["Client"]
-        UI["React UI Components"]
-        RT["Router and Role Guards"]
-        AX["API Client with JWT"]
-        UI --> RT --> AX
+        UI["Razor Views (.cshtml)"]
+        RT["Routing and Role Authorization"]
+        UI --> RT
     end
 
-    subgraph Server["ASP.NET Core Web API"]
+    subgraph Server["ASP.NET Core MVC"]
         AC["Auth Component"]
         UC["Users Component"]
         CC["Courses Component"]
@@ -37,12 +36,12 @@ flowchart LR
         CC --> FM
     end
 
-    AX -- "REST over HTTPS" --> AC
-    AX --> UC
-    AX --> CC
-    AX --> PC
-    AX --> EC
-    AX --> RC
+    RT -- "HTTPS page and form requests" --> AC
+    RT --> UC
+    RT --> CC
+    RT --> PC
+    RT --> EC
+    RT --> RC
     DA --> DB[("SQL Server")]
     FM --> FS[("Uploads folder")]
 ```
@@ -57,8 +56,7 @@ flowchart TB
 
     subgraph HOST["Hosting Server (Windows or Linux)"]
         subgraph WEB["Web Server (IIS or Nginx)"]
-            SPA["React static build"]
-            API["ASP.NET Core Web API (Kestrel)"]
+            API["ASP.NET Core MVC (Kestrel)"]
         end
         UP[("Uploads folder")]
     end
@@ -69,8 +67,7 @@ flowchart TB
 
     VID["External video host"]
 
-    BR -- "HTTPS 443" --> SPA
-    BR -- "HTTPS REST + JWT" --> API
+    BR -- "HTTPS 443 pages and forms + Cookie Authentication" --> API
     API -- "TCP 1433 (EF Core)" --> SQL
     API -- "File I/O" --> UP
     BR -. "video streaming" .-> VID
@@ -79,8 +76,8 @@ flowchart TB
 ## 12.4 Integration Points
 | Integration | Type | Notes |
 |-------------|------|-------|
-| React ↔ Web API | REST / JSON over HTTPS | JWT in `Authorization: Bearer` header |
-| Web API ↔ SQL Server | EF Core | Code-First migrations |
-| Web API ↔ File system | File I/O | Receipts and thumbnails |
+| Browser ↔ MVC Web Application | HTTPS pages and forms | Cookie Authentication (ASP.NET Core Identity) |
+| MVC Web Application ↔ SQL Server | EF Core | Code-First migrations |
+| MVC Web Application ↔ File system | File I/O | Receipts and thumbnails |
 | Browser ↔ video host | Embedded player | No server-side integration |
 | InstaPay / Vodafone Cash | **None (manual)** | Student pays outside the system and uploads the receipt |

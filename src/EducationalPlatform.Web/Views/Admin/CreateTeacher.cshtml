@@ -1,0 +1,52 @@
+﻿@model EducationalPlatform.Web.Models.ViewModels.Admin.CreateTeacherViewModel
+@{
+    ViewData["Title"] = "إضافة مدرس جديد";
+}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">إنشاء حساب مدرس جديد</h5>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="CreateTeacher" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="FullName" class="form-label">الاسم بالكامل</label>
+                        <input asp-for="FullName" class="form-control" placeholder="مثال: أ. أحمد محمود" />
+                        <span asp-validation-for="FullName" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label">البريد الإلكتروني</label>
+                        <input asp-for="Email" class="form-control" placeholder="teacher@platform.com" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PhoneNumber" class="form-label">رقم الهاتف (اختياري)</label>
+                        <input asp-for="PhoneNumber" class="form-control" placeholder="010xxxxxxxx" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label">كلمة المرور المبدئية</label>
+                        <input asp-for="Password" class="form-control" />
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Teachers" class="btn btn-outline-secondary">رجوع للقائمة</a>
+                        <button type="submit" class="btn btn-success">إنشاء الحساب</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

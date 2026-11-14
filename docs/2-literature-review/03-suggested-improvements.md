@@ -9,5 +9,5 @@ Areas where the project can be enhanced after the first release (they are out of
 | 3 | Native mobile apps | Better experience on phones |
 | 4 | Certificates after course completion | Motivation and proof of learning |
 | 5 | Chat or comments between students and teachers | Better interaction |
-| 6 | Cloud storage for uploads and a second API instance | Better scaling |
+| 6 | Cloud storage for uploads and a second web instance | Better scaling |
 | 7 | Email or push notifications | Faster updates for students and parents |

@@ -5,24 +5,24 @@
 ```mermaid
 sequenceDiagram
     actor U as User
-    participant FE as React App
-    participant API as AuthController
+    participant FE as Browser (Razor View)
+    participant API as AccountController
     participant SV as AuthService
     participant DB as SQL Server
 
     U->>FE: Enter email and password
-    FE->>API: POST /api/auth/login
-    API->>SV: Login(dto)
+    FE->>API: POST /Account/Login
+    API->>SV: Login(model)
     SV->>DB: Find user by email
     DB-->>SV: User record
     SV->>SV: Verify password hash and IsActive
     alt valid
-        SV-->>API: JWT token and role
-        API-->>FE: 200 OK
-        FE-->>U: Redirect to role dashboard
+        SV-->>API: authenticated session cookie and role
+        API-->>FE: Redirect to role dashboard
+        FE-->>U: Show dashboard page
     else invalid
         SV-->>API: Invalid credentials
-        API-->>FE: 401 Unauthorized
+        API-->>FE: Login page with error
         FE-->>U: Show error message
     end
 ```
@@ -33,7 +33,7 @@ sequenceDiagram
 sequenceDiagram
     actor S as Student
     actor A as Admin
-    participant FE as React App
+    participant FE as Browser (Razor View)
     participant API as PaymentRequestsController
     participant SV as PaymentService
     participant FS as File Storage
@@ -41,24 +41,24 @@ sequenceDiagram
 
     S->>FE: Pay via InstaPay or Vodafone Cash (outside system)
     S->>FE: Choose method and upload receipt
-    FE->>API: POST /api/payment-requests (courseId, method, image)
-    API->>SV: CreateRequest(dto)
+    FE->>API: POST /Payments/Create (courseId, method, receipt image)
+    API->>SV: CreateRequest(model)
     SV->>DB: Check not already enrolled
     SV->>DB: Get course price
     SV->>FS: Save receipt image
     SV->>DB: Insert PaymentRequest (Status = Pending)
-    API-->>FE: 201 Created
+    API-->>FE: Redirect to My Requests
     FE-->>S: Request submitted, waiting for approval
 
     A->>FE: Open pending requests
-    FE->>API: GET /api/payment-requests?status=Pending
-    API-->>FE: List with receipts
+    FE->>API: GET /Admin/Payments
+    API-->>FE: Page with requests and receipts
     A->>FE: Approve request
-    FE->>API: PUT /api/payment-requests/id/approve
+    FE->>API: POST /Admin/ApprovePayment/id
     API->>SV: Approve(id, adminId)
     SV->>DB: Update Status = Approved, ReviewedAt
     SV->>DB: Insert Enrollment
-    API-->>FE: 200 OK
+    API-->>FE: Redirect to Payments page
     FE-->>A: Request approved
     S->>FE: Open My Courses
     FE-->>S: Course is now accessible
@@ -70,19 +70,19 @@ sequenceDiagram
 sequenceDiagram
     actor S as Student
     actor T as Teacher
-    participant FE as React App
+    participant FE as Browser (Razor View)
     participant API as ExamsController
     participant SV as ExamService
     participant DB as SQL Server
 
     S->>FE: Start exam
-    FE->>API: POST /api/exams/id/start
+    FE->>API: POST /Exams/Start/id
     API->>SV: StartAttempt(examId, studentId)
     SV->>DB: Verify enrollment and exam published
     SV->>DB: Insert ExamAttempt (InProgress)
-    API-->>FE: Questions and timer
+    API-->>FE: Exam page with questions and timer
     S->>FE: Answer questions and submit
-    FE->>API: POST /api/attempts/id/submit (answers)
+    FE->>API: POST /Exams/Submit/id (answers)
     API->>SV: Submit(attemptId, answers)
     SV->>DB: Save AttemptAnswers
     SV->>SV: Auto-grade MCQ answers
@@ -95,13 +95,13 @@ sequenceDiagram
     end
 
     T->>FE: Open ungraded submissions
-    FE->>API: GET /api/attempts?status=Submitted
+    FE->>API: GET /Teacher/Submissions
     T->>FE: Enter score and feedback per essay
-    FE->>API: PUT /api/attempts/id/grade
+    FE->>API: POST /Teacher/Grade/id
     API->>SV: GradeEssays(attemptId, scores)
     SV->>DB: Update AttemptAnswers scores
     SV->>DB: TotalScore = sum, Status = Graded
-    API-->>FE: 200 OK
+    API-->>FE: Redirect to Submissions page
     S->>FE: View grades
     FE-->>S: Score and teacher feedback
 ```

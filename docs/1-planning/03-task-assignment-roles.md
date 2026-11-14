@@ -2,7 +2,7 @@
 
 | Member | Role | Responsibilities |
 |--------|------|------------------|
-| Mohamed Hany | Team Lead | Project setup, identity and login (JWT, roles), admin features, code review, repository management |
+| Mohamed Hany | Team Lead | Project setup, identity and login (cookies, roles), admin features, code review, repository management |
 | Mohamed Medhat | Developer | Teacher features: courses, lessons, videos |
 | Omar Ghamry | Developer | Exams: questions, attempts, grading |
 | Mohamed Hatem | Developer | Student features, enrollment, parent features, notifications |

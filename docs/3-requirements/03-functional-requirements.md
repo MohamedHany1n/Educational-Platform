@@ -8,7 +8,7 @@
 |----|-------------|
 | FR-01 | The system shall allow Students and Parents to register with name, email, phone and password. |
 | FR-02 | The system shall allow all users to log in and log out. |
-| FR-03 | The system shall restrict each page and API endpoint by role (Admin, Teacher, Student, Parent). |
+| FR-03 | The system shall restrict each page and action by role (Admin, Teacher, Student, Parent). |
 | FR-04 | The admin shall create, edit, activate/deactivate and delete teacher and student accounts. |
 | FR-05 | A parent shall be able to link to one or more student accounts. |
 

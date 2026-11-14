@@ -1,4 +1,4 @@
-﻿# Educational Platform
+# Educational Platform
 
 A web-based educational platform where teachers publish courses, lessons, videos and exams, students enroll and study, parents follow their children's progress, and admins manage the whole system.
 
@@ -15,10 +15,10 @@ Built for the DEPI graduation project (Full Stack .NET track).
 
 ## Tech Stack
 
-- Backend: ASP.NET Core Web API
+- Backend: ASP.NET Core MVC
 - Database: SQL Server with Entity Framework Core
-- Authentication: ASP.NET Core Identity and JWT
-- Frontend: React
+- Authentication: ASP.NET Core Identity (Cookie Authentication)
+- Frontend: Razor Views (HTML5, CSS3, Bootstrap 5)
 
 ## Team
 
@@ -46,20 +46,20 @@ No direct pushes to main or develop. Every change goes through a Pull Request an
 
 Use a clear prefix: feat, fix, docs, refactor, test.
 
-Example: feat: add teacher courses endpoint
+Example: feat: add teacher courses page
 
 ## Getting Started
 
 Requirements: .NET SDK, SQL Server, Visual Studio or VS Code.
 
-To run the API:
+To run the website:
 
-    cd src/EducationalPlatform.Api
+    cd src/EducationalPlatform.Web
     dotnet restore
     dotnet ef database update
     dotnet run
 
-Set your connection string and JWT key with User Secrets, not in appsettings.json.
+Set your connection string with User Secrets, not in appsettings.json.
 
 ## Documentation
 
