@@ -48,7 +48,7 @@ flowchart TB
 
     ADM & TCH & STD & PAR -- "credentials" --> P1
     P1 <--> D1
-    P1 -- "token and role" --> ADM & TCH & STD & PAR
+    P1 -- "session cookie and role" --> ADM & TCH & STD & PAR
 
     ADM -- "manage teachers and students" --> P2
     PAR -- "link to child" --> P2

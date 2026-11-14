@@ -21,7 +21,7 @@ All diagrams are written in **Mermaid**, so GitHub renders them directly inside 
 | 10 | [Class Diagram](10-class-diagram.md) | Domain classes |
 | 11 | [UI/UX Design](11-ui-ux.md) | Wireframes + guidelines |
 | 12 | [Deployment & Integration](12-deployment-integration.md) | Tech stack, deployment & component diagrams |
-| 13 | [Additional Deliverables](13-additional-deliverables.md) | API docs outline, testing plan, deployment strategy |
+| 13 | [Additional Deliverables](13-additional-deliverables.md) | Routes outline, testing plan, deployment strategy |
 
 ## Project in one paragraph
 An online educational platform where **teachers** publish courses (video lessons and exams), **students** enroll after paying manually through **InstaPay or Vodafone Cash** (uploading a receipt that the **admin** approves), take exams and see their grades, and **parents** follow their children's progress and grades.

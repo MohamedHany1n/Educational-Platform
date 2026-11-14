@@ -7,7 +7,7 @@
 |----|-------------|
 | FR-01 | The system shall allow Students and Parents to register with name, email, phone and password. |
 | FR-02 | The system shall allow all users to log in and log out. |
-| FR-03 | The system shall restrict each page and API endpoint by role (Admin, Teacher, Student, Parent). |
+| FR-03 | The system shall restrict each page and action by role (Admin, Teacher, Student, Parent). |
 | FR-04 | The admin shall create, edit, activate/deactivate and delete teacher and student accounts. |
 | FR-05 | A parent shall be able to link to one or more student accounts. |
 
@@ -60,7 +60,7 @@
 | Performance | NFR-01 | Normal pages respond in under 3 seconds with up to 200 concurrent users. |
 | Performance | NFR-02 | Lists (courses, requests, users) are paginated. |
 | Security | NFR-03 | Passwords are hashed (ASP.NET Core Identity / PBKDF2), never stored in plain text. |
-| Security | NFR-04 | API uses Cookie authentication and role-based authorization. |
+| Security | NFR-04 | The website uses Cookie authentication (ASP.NET Core Identity) and role-based authorization. |
 | Security | NFR-05 | Uploaded receipts accept only image types (jpg, png) up to 5 MB and are renamed on the server; only the Admin and the owner can view them. |
 | Security | NFR-06 | All input is validated on the server; EF Core parameterized queries prevent SQL injection. |
 | Security | NFR-07 | Communication uses HTTPS. |

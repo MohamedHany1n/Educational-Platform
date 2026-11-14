@@ -25,9 +25,9 @@ Built for the DEPI graduation project (Full Stack .NET track).
 | Member | Responsibility |
 |--------|----------------|
 | Mohamed Hany (Lead) | Setup, identity and login, admin, code review |
-| Member 2 | Teacher features: courses, lessons, videos |
-| Member 3 | Exams: questions, attempts, grading |
-| Member 4 | Student, enrollment, parent, notifications |
+| Mohamed Medhat | Teacher features: courses, lessons, videos |
+| Omar Ghamry | Exams: questions, attempts, grading |
+| Mohamed Hatem | Student, enrollment, parent, notifications |
 
 ## Repository Structure
 
@@ -46,20 +46,20 @@ No direct pushes to main or develop. Every change goes through a Pull Request an
 
 Use a clear prefix: feat, fix, docs, refactor, test.
 
-Example: feat: add teacher courses endpoint
+Example: feat: add teacher courses page
 
 ## Getting Started
 
 Requirements: .NET SDK, SQL Server, Visual Studio or VS Code.
 
-To run the API:
+To run the website:
 
     cd src/EducationalPlatform.Web
     dotnet restore
     dotnet ef database update
     dotnet run
 
-Set your connection string and connection string and secrets with User Secrets, not in appsettings.json.
+Set your connection string with User Secrets, not in appsettings.json.
 
 ## Documentation
 
