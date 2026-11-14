@@ -33,9 +33,15 @@ public class AccountController : Controller
         if (!ModelState.IsValid) return View(model);
 
         var user = await _userManager.FindByEmailAsync(model.Email);
-        if (user == null || !user.IsActive)
+        if (user == null)
         {
-            ModelState.AddModelError(string.Empty, "بيانات الدخول غير صحيحة أو الحساب موقوف.");
+            ModelState.AddModelError(string.Empty, "البريد الإلكتروني أو كلمة المرور غير صحيحة.");
+            return View(model);
+        }
+
+        if (!user.IsActive)
+        {
+            ModelState.AddModelError(string.Empty, "حسابك في انتظار موافقة الإدارة أو تم إيقافه.");
             return View(model);
         }
 
@@ -77,15 +83,15 @@ public class AccountController : Controller
             UserName = model.Email,
             Email = model.Email,
             FullName = model.FullName,
-            IsActive = true
+            IsActive = false
         };
 
         var result = await _userManager.CreateAsync(user, model.Password);
         if (result.Succeeded)
         {
             await _userManager.AddToRoleAsync(user, model.Role);
-            await _signInManager.SignInAsync(user, isPersistent: false);
-            return RedirectToAction("Index", "Home");
+            TempData["SuccessMessage"] = "تم تسجيل بياناتك بنجاح، حسابك الآن في انتظار موافقة الإدارة.";
+            return RedirectToAction(nameof(Login));
         }
 
         foreach (var error in result.Errors)

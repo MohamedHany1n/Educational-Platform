@@ -1,0 +1,152 @@
+﻿@using EducationalPlatform.Web.Models.Enums
+@model List<EducationalPlatform.Web.Models.PaymentRequest>
+@{
+    ViewData["Title"] = "مراجعة إيصالات الدفع";
+    PaymentStatus? selectedStatus = ViewBag.SelectedStatus;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>مراجعة إيصالات الدفع</h2>
+    <div class="btn-group">
+        <a asp-action="Payments" class="btn @(selectedStatus == null ? "btn-dark" : "btn-outline-dark")">الكل</a>
+        <a asp-action="Payments" asp-route-status="@PaymentStatus.Pending" class="btn @(selectedStatus == PaymentStatus.Pending ? "btn-warning" : "btn-outline-warning")">قيد المراجعة</a>
+        <a asp-action="Payments" asp-route-status="@PaymentStatus.Approved" class="btn @(selectedStatus == PaymentStatus.Approved ? "btn-success" : "btn-outline-success")">مقبول</a>
+        <a asp-action="Payments" asp-route-status="@PaymentStatus.Rejected" class="btn @(selectedStatus == PaymentStatus.Rejected ? "btn-danger" : "btn-outline-danger")">مرفوض</a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <p class="text-muted text-center my-4">لا توجد طلبات دفع مطابقة للفلتر المحدد.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>الطالب</th>
+                            <th>الكورس</th>
+                            <th>المبلغ</th>
+                            <th>الوسيلة</th>
+                            <th>صورة الإيصال</th>
+                            <th>الحالة</th>
+                            <th>التاريخ</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.Id</td>
+                                <td>
+                                    <div>@item.Student.FullName</div>
+                                    <small class="text-muted">@item.Student.Email</small>
+                                </td>
+                                <td>@item.Course.Title</td>
+                                <td class="fw-bold">@item.Amount.ToString("N2") ج.م</td>
+                                <td><span class="badge bg-secondary">@item.PaymentMethod</span></td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#receiptModal-@item.Id">
+                                        عرض الإيصال
+                                    </button>
+
+                                    <div class="modal fade" id="receiptModal-@item.Id" tabindex="-1">
+                                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">إيصال دفع الطالب: @item.Student.FullName</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body text-center">
+                                                    <img src="@item.ReceiptImagePath" alt="Receipt" class="img-fluid rounded border" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (item.Status == PaymentStatus.Pending)
+                                    {
+                                        <span class="badge bg-warning text-dark">قيد المراجعة</span>
+                                    }
+                                    else if (item.Status == PaymentStatus.Approved)
+                                    {
+                                        <span class="badge bg-success">مقبول</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">مرفوض</span>
+                                        @if (!string.IsNullOrEmpty(item.RejectionReason))
+                                        {
+                                            <div class="small text-danger mt-1">السبب: @item.RejectionReason</div>
+                                        }
+                                    }
+                                </td>
+                                <td>@item.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>
+                                    @if (item.Status == PaymentStatus.Pending)
+                                    {
+                                        <form asp-action="ApprovePayment" asp-route-id="@item.Id" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('تأكيد قبول الإيصال وتفعيل الكورس للطالب؟')">
+                                                قبول
+                                            </button>
+                                        </form>
+
+                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal-@item.Id">
+                                            رفض
+                                        </button>
+
+                                        <div class="modal fade" id="rejectModal-@item.Id" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <form asp-action="RejectPayment" asp-route-id="@item.Id" method="post">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">رفض إيصال الدفع #@item.Id</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <label class="form-label">سبب الرفض (سيظهر للطالب)</label>
+                                                            <textarea name="rejectionReason" class="form-control" rows="3" required placeholder="مثال: صورة الإيصال غير واضحة أو المبلغ غير مطابق"></textarea>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                                            <button type="submit" class="btn btn-danger">تأكيد الرفض</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">تمت المراجعة بواسطة: @(item.ReviewedByAdmin?.FullName ?? "-")</small>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

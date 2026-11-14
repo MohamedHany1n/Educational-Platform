@@ -1,0 +1,79 @@
+﻿@model List<EducationalPlatform.Web.Models.ViewModels.Admin.PendingUserViewModel>
+@{
+    ViewData["Title"] = "طلبات تفعيل الحسابات";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>طلبات تفعيل الحسابات الجديدة</h2>
+    <a asp-action="Index" class="btn btn-outline-secondary">رجوع للوحة الإدارة</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <p class="text-muted text-center my-4">لا توجد حسابات جديدة في انتظار الموافقة حالياً.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>الاسم بالكامل</th>
+                            <th>البريد الإلكتروني</th>
+                            <th>نوع الحساب</th>
+                            <th>تاريخ التسجيل</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td>@user.Id</td>
+                                <td>@user.FullName</td>
+                                <td>@user.Email</td>
+                                <td>
+                                    @if (user.Role == "Student")
+                                    {
+                                        <span class="badge bg-primary">طالب</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-info text-dark">ولي أمر</span>
+                                    }
+                                </td>
+                                <td>@user.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>
+                                    <form asp-action="ApproveUser" asp-route-id="@user.Id" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-success">قبول وتفعيل</button>
+                                    </form>
+                                    <form asp-action="RejectUser" asp-route-id="@user.Id" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('تأكيد رفض وحذف هذا الطلب؟')">رفض</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

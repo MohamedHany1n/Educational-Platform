@@ -30,6 +30,21 @@
                     <ul class="navbar-nav">
                         @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link fw-bold text-primary" asp-controller="Admin" asp-action="Index">لوحة الإدارة</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Admin" asp-action="Teachers">المدرسين</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Admin" asp-action="Payments">الإيصالات</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Admin" asp-action="PendingUsers">طلبات الحسابات</a>
+                                </li>
+                            }
                             <li class="nav-item">
                                 <span class="nav-link text-dark">مرحباً، @User.Identity.Name</span>
                             </li>
@@ -70,4 +85,5 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
 

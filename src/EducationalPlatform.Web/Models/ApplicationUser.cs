@@ -2,10 +2,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace EducationalPlatform.Web.Models;
 
-/// <summary>
-/// Every person in the system (Admin, Teacher, Student, Parent).
-/// The role itself is stored by ASP.NET Core Identity (roles tables).
-/// </summary>
+
 public class ApplicationUser : IdentityUser<int>
 {
     public string FullName { get; set; } = string.Empty;

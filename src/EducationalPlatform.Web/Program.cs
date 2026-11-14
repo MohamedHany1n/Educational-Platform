@@ -1,4 +1,4 @@
-using EducationalPlatform.Web.Data;
+﻿using EducationalPlatform.Web.Data;
 using EducationalPlatform.Web.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<EducationalPlatform.Web.Repositories.IAdminRepository, EducationalPlatform.Web.Repositories.AdminRepository>();
+builder.Services.AddScoped<EducationalPlatform.Web.Services.IAdminService, EducationalPlatform.Web.Services.AdminService>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
