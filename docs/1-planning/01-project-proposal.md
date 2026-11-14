@@ -36,10 +36,9 @@ Teachers who want to teach online usually rely on scattered tools (chat groups, 
 ## Proposed Technology
 | Part | Technology |
 |------|------------|
-| Backend | ASP.NET Core Web API |
+| Web application | ASP.NET Core MVC with Razor Views and Bootstrap 5 |
 | Database | SQL Server with Entity Framework Core |
-| Authentication | ASP.NET Core Identity and JWT |
-| Frontend | React |
+| Authentication | ASP.NET Core Identity (Cookie Authentication) |
 | Version control | Git and GitHub |
 
 ## Expected Deliverables

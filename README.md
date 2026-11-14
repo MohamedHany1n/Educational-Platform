@@ -46,20 +46,20 @@ No direct pushes to main or develop. Every change goes through a Pull Request an
 
 Use a clear prefix: feat, fix, docs, refactor, test.
 
-Example: feat: add teacher courses endpoint
+Example: feat: add teacher courses page
 
 ## Getting Started
 
 Requirements: .NET SDK, SQL Server, Visual Studio or VS Code.
 
-To run the API:
+To run the website:
 
     cd src/EducationalPlatform.Web
     dotnet restore
     dotnet ef database update
     dotnet run
 
-Set your connection string and connection string and secrets with User Secrets, not in appsettings.json.
+Set your connection string with User Secrets, not in appsettings.json.
 
 ## Documentation
 
