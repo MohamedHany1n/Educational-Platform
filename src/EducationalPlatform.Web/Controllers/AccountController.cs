@@ -1,10 +1,12 @@
-﻿using EducationalPlatform.Web.Models;
+using EducationalPlatform.Web.Models;
 using EducationalPlatform.Web.Models.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EducationalPlatform.Web.Controllers;
 
+[AllowAnonymous]
 public class AccountController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -39,25 +41,33 @@ public class AccountController : Controller
             return View(model);
         }
 
+        // Check the password first (this also counts failed attempts), then check the account status.
+        var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: true);
+
+        if (result.IsLockedOut)
+        {
+            ModelState.AddModelError(string.Empty, "تم قفل الحساب مؤقتاً بسبب محاولات دخول خاطئة كثيرة. حاول مرة أخرى بعد قليل.");
+            return View(model);
+        }
+
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, "البريد الإلكتروني أو كلمة المرور غير صحيحة.");
+            return View(model);
+        }
+
         if (!user.IsActive)
         {
             ModelState.AddModelError(string.Empty, "حسابك في انتظار موافقة الإدارة أو تم إيقافه.");
             return View(model);
         }
 
-        var result = await _signInManager.PasswordSignInAsync(
-            user, model.Password, model.RememberMe, lockoutOnFailure: false);
+        await _signInManager.SignInAsync(user, model.RememberMe);
 
-        if (result.Succeeded)
-        {
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                return Redirect(returnUrl);
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
 
-            return RedirectToAction("Index", "Home");
-        }
-
-        ModelState.AddModelError(string.Empty, "البريد الإلكتروني أو كلمة المرور غير صحيحة.");
-        return View(model);
+        return RedirectToAction("Index", "Home");
     }
 
     [HttpGet]
