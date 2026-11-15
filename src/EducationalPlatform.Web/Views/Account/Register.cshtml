@@ -7,7 +7,7 @@
     <div class="col-md-6">
         <div class="card shadow-sm">
             <div class="card-body p-4">
-                <h3 class="text-center mb-4">إنشاء حساب جديد</h3>
+                <h3 class="text-center mb-4">إنشاء حساب طالب جديد</h3>
                 <form asp-action="Register" method="post">
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
@@ -24,12 +24,16 @@
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="Role" class="form-label">نوع الحساب</label>
-                        <select asp-for="Role" class="form-select">
-                            <option value="Student">طالب (Student)</option>
-                            <option value="Parent">ولي أمر (Parent)</option>
-                        </select>
-                        <span asp-validation-for="Role" class="text-danger"></span>
+                        <label asp-for="PhoneNumber" class="form-label">رقم هاتف الطالب</label>
+                        <input asp-for="PhoneNumber" class="form-control" placeholder="01012345678" inputmode="numeric" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ParentPhoneNumber" class="form-label">رقم هاتف ولي الأمر</label>
+                        <input asp-for="ParentPhoneNumber" class="form-control" placeholder="01012345678" inputmode="numeric" />
+                        <span asp-validation-for="ParentPhoneNumber" class="text-danger"></span>
+                        <div class="form-text">سيتواصل معك فريق الإدارة لتأكيد حساب ولي الأمر وربطه بحسابك.</div>
                     </div>
 
                     <div class="mb-3">
