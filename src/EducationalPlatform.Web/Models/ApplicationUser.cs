@@ -11,6 +11,9 @@ public class ApplicationUser : IdentityUser<int>
     /// <summary>Soft delete: the account is hidden everywhere but its history (payments, progress, grades) is kept.</summary>
     public bool IsDeleted { get; set; }
 
+    /// <summary>When the admin approved the registration. Null means the registration is still pending (or the account is a legacy one).</summary>
+    public DateTime? ApprovedAt { get; set; }
+
     /// <summary>Student only: the parent's phone number, entered at registration. The admin uses it to create and link the parent account.</summary>
     public string? ParentPhoneNumber { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

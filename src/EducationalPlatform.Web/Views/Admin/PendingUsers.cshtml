@@ -62,8 +62,8 @@
                                         <span class="badge bg-info text-dark">ولي أمر</span>
                                     }
                                 </td>
-                                <td dir="ltr" class="text-end">@(user.PhoneNumber ?? "-")</td>
-                                <td dir="ltr" class="text-end">@(user.ParentPhoneNumber ?? "-")</td>
+                                <td dir="ltr" style="text-align:right">@(user.PhoneNumber ?? "-")</td>
+                                <td dir="ltr" style="text-align:right">@(user.ParentPhoneNumber ?? "-")</td>
                                 <td>@user.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                 <td>
                                     <form asp-action="ApproveUser" asp-route-id="@user.Id" method="post" class="d-inline">

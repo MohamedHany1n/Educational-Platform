@@ -1,0 +1,123 @@
+@model EducationalPlatform.Web.Models.ViewModels.Admin.StudentListViewModel
+@{
+    ViewData["Title"] = "الطلاب";
+    string S(string key) => Model.Status == key ? "btn-dark" : "btn-outline-dark";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>الطلاب <small class="text-muted fs-6">(@Model.TotalCount)</small></h2>
+    <a asp-action="PendingUsers" class="btn btn-warning">طلبات التسجيل الجديدة</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="btn-group mb-3">
+    <a asp-action="Students" asp-route-search="@Model.Search" class="btn @(S(""))">الكل</a>
+    <a asp-action="Students" asp-route-search="@Model.Search" asp-route-status="active" class="btn @(S("active"))">نشط</a>
+    <a asp-action="Students" asp-route-search="@Model.Search" asp-route-status="pending" class="btn @(S("pending"))">بانتظار الموافقة</a>
+    <a asp-action="Students" asp-route-search="@Model.Search" asp-route-status="suspended" class="btn @(S("suspended"))">موقوف</a>
+    <a asp-action="Students" asp-route-search="@Model.Search" asp-route-status="deleted" class="btn @(S("deleted"))">المحذوفين</a>
+</div>
+
+<form method="get" asp-action="Students" class="row g-2 mb-3">
+    <input type="hidden" name="status" value="@Model.Status" />
+    <div class="col-md-8">
+        <input name="search" value="@Model.Search" class="form-control" placeholder="ابحث بالاسم أو البريد أو رقم الطالب أو رقم ولي الأمر" />
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">بحث</button>
+    </div>
+    <div class="col-md-2">
+        <a asp-action="Students" asp-route-status="@Model.Status" class="btn btn-outline-secondary w-100">مسح</a>
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @if (!Model.Items.Any())
+        {
+            <p class="text-muted text-center my-4">لا يوجد طلاب مطابقين للفلتر المحدد.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>الاسم</th>
+                            <th>البريد الإلكتروني</th>
+                            <th>هاتف الطالب</th>
+                            <th>هاتف ولي الأمر</th>
+                            <th>الكورسات</th>
+                            <th>الحصص المكتملة</th>
+                            <th>الحالة</th>
+                            <th>التحكم</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var student in Model.Items)
+                        {
+                            <tr>
+                                <td>@student.Id</td>
+                                <td>@student.FullName</td>
+                                <td>@student.Email</td>
+                                <td dir="ltr" style="text-align:right">@(student.PhoneNumber ?? "-")</td>
+                                <td dir="ltr" style="text-align:right">@(student.ParentPhoneNumber ?? "-")</td>
+                                <td>@student.EnrollmentsCount</td>
+                                <td>@student.CompletedLessons</td>
+                                <td>
+                                    @switch (student.StatusKey)
+                                    {
+                                        case "active":
+                                            <span class="badge bg-success">نشط</span>
+                                            break;
+                                        case "pending":
+                                            <span class="badge bg-warning text-dark">بانتظار الموافقة</span>
+                                            break;
+                                        case "suspended":
+                                            <span class="badge bg-secondary">موقوف</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-danger">محذوف</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    <a asp-action="StudentDetails" asp-route-id="@student.Id" class="btn btn-sm btn-outline-primary">التفاصيل</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav>
+                    <ul class="pagination justify-content-center mb-0">
+                        @for (var p = 1; p <= Model.TotalPages; p++)
+                        {
+                            <li class="page-item @(p == Model.Page ? "active" : "")">
+                                <a class="page-link" asp-action="Students" asp-route-page="@p" asp-route-search="@Model.Search" asp-route-status="@Model.Status">@p</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            }
+        }
+    </div>
+</div>
