@@ -1,4 +1,4 @@
-﻿using EducationalPlatform.Web.Models;
+using EducationalPlatform.Web.Models;
 using EducationalPlatform.Web.Models.Enums;
 using EducationalPlatform.Web.Models.ViewModels.Admin;
 using EducationalPlatform.Web.Repositories;
@@ -147,8 +147,14 @@ public class AdminService : IAdminService
         if (user == null)
             return (false, "الحساب غير موجود.");
 
+        if (!await IsPendingRegistrationAsync(user))
+            return (false, "هذا الحساب ليس طلب تسجيل في الانتظار.");
+
         user.IsActive = true;
-        await _userManager.UpdateAsync(user);
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+            return (false, "تعذّر تفعيل الحساب.");
+
         return (true, $"تم تفعيل حساب ({user.FullName}) بنجاح.");
     }
 
@@ -158,7 +164,23 @@ public class AdminService : IAdminService
         if (user == null)
             return (false, "الحساب غير موجود.");
 
-        await _userManager.DeleteAsync(user);
+        if (!await IsPendingRegistrationAsync(user))
+            return (false, "هذا الحساب ليس طلب تسجيل في الانتظار.");
+
+        var result = await _userManager.DeleteAsync(user);
+        if (!result.Succeeded)
+            return (false, "تعذّر حذف طلب التسجيل.");
+
         return (true, $"تم رفض وحذف طلب حساب ({user.FullName}).");
+    }
+
+    // Only inactive Student or Parent accounts are registration requests.
+    // This stops the admin actions from touching teachers, admins or active users.
+    private async Task<bool> IsPendingRegistrationAsync(ApplicationUser user)
+    {
+        if (user.IsActive) return false;
+
+        return await _userManager.IsInRoleAsync(user, "Student")
+            || await _userManager.IsInRoleAsync(user, "Parent");
     }
 }
