@@ -31,6 +31,46 @@ public class AdminRepository : IAdminRepository
             .Select(g => new { TeacherId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.TeacherId, x => x.Count);
 
+    public async Task<Dictionary<int, int>> GetParentChildrenCountMapAsync()
+        => await _context.ParentStudents
+            .GroupBy(ps => ps.ParentId)
+            .Select(g => new { ParentId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.ParentId, x => x.Count);
+
+    public async Task<List<ParentStudent>> GetLinksByParentAsync(int parentId)
+        => await _context.ParentStudents
+            .Include(ps => ps.Student)
+            .Where(ps => ps.ParentId == parentId)
+            .OrderBy(ps => ps.LinkedAt)
+            .ToListAsync();
+
+    public async Task<bool> LinkExistsAsync(int parentId, int studentId)
+        => await _context.ParentStudents
+            .AnyAsync(ps => ps.ParentId == parentId && ps.StudentId == studentId);
+
+    public async Task AddLinkAsync(int parentId, int studentId, int adminId)
+    {
+        _context.ParentStudents.Add(new ParentStudent
+        {
+            ParentId = parentId,
+            StudentId = studentId,
+            LinkedByAdminId = adminId,
+            LinkedAt = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> RemoveLinkAsync(int parentId, int studentId)
+    {
+        var link = await _context.ParentStudents
+            .FirstOrDefaultAsync(ps => ps.ParentId == parentId && ps.StudentId == studentId);
+        if (link == null) return false;
+
+        _context.ParentStudents.Remove(link);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     public async Task<List<PaymentRequest>> GetPaymentRequestsAsync(PaymentStatus? status = null)
     {
         var query = _context.PaymentRequests

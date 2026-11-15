@@ -1,0 +1,130 @@
+@model EducationalPlatform.Web.Models.ViewModels.Admin.ParentDetailsViewModel
+@{
+    ViewData["Title"] = "ولي الأمر: " + Model.FullName;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>ولي الأمر: @Model.FullName</h2>
+    <a asp-action="Parents" class="btn btn-outline-secondary">رجوع للقائمة</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-2"><strong>البريد الإلكتروني:</strong> @Model.Email</div>
+            <div class="col-md-4 mb-2"><strong>رقم الهاتف:</strong> <span dir="ltr">@(Model.PhoneNumber ?? "-")</span></div>
+            <div class="col-md-4 mb-2">
+                <strong>الحالة:</strong>
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success">نشط</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">موقوف</span>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header"><h5 class="mb-0">ربط ابن جديد</h5></div>
+    <div class="card-body">
+        @if (!Model.AvailableStudents.Any())
+        {
+            <p class="text-muted mb-0">لا يوجد طلاب متاحون للربط.</p>
+        }
+        else
+        {
+            <form asp-action="LinkStudent" method="post" class="row g-2 align-items-end">
+                <input type="hidden" name="parentId" value="@Model.Id" />
+                <div class="col-md-9">
+                    <label class="form-label">اختر الطالب</label>
+                    <select name="studentId" class="form-select" required>
+                        <option value="">-- اختر الطالب --</option>
+                        @foreach (var student in Model.AvailableStudents)
+                        {
+                            <option value="@student.Id" selected="@(Model.PreselectedStudentId == student.Id)">@student.Label</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-success w-100">ربط</button>
+                </div>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header"><h5 class="mb-0">الأبناء المرتبطون (@Model.Children.Count)</h5></div>
+    <div class="card-body">
+        @if (!Model.Children.Any())
+        {
+            <p class="text-muted text-center my-3">لم يتم ربط أي ابن بهذا الحساب بعد.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>اسم الطالب</th>
+                            <th>البريد الإلكتروني</th>
+                            <th>رقم الهاتف</th>
+                            <th>الحالة</th>
+                            <th>تاريخ الربط</th>
+                            <th>التحكم</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var child in Model.Children)
+                        {
+                            <tr>
+                                <td>@child.Id</td>
+                                <td>@child.FullName</td>
+                                <td>@child.Email</td>
+                                <td dir="ltr" class="text-end">@(child.PhoneNumber ?? "-")</td>
+                                <td>
+                                    @if (child.IsActive)
+                                    {
+                                        <span class="badge bg-success">نشط</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark">بانتظار التفعيل</span>
+                                    }
+                                </td>
+                                <td>@child.LinkedAt.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                                <td>
+                                    <form asp-action="UnlinkStudent" method="post" class="d-inline">
+                                        <input type="hidden" name="parentId" value="@Model.Id" />
+                                        <input type="hidden" name="studentId" value="@child.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('تأكيد فك الربط بين الطالب وولي الأمر؟')">فك الربط</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

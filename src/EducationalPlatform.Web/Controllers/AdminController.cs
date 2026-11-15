@@ -66,6 +66,89 @@ public class AdminController : Controller
         return RedirectToAction(nameof(Teachers));
     }
 
+    // ---------------- Parents ----------------
+
+    [HttpGet]
+    public async Task<IActionResult> Parents()
+    {
+        var parents = await _adminService.GetParentsAsync();
+        return View(parents);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> CreateParent(int? studentId = null)
+    {
+        var (model, existingParentId) = await _adminService.PrepareCreateParentAsync(studentId);
+
+        // A parent with the same phone already exists (for example a second child): link instead of creating a duplicate.
+        if (existingParentId.HasValue)
+        {
+            TempData["SuccessMessage"] = "يوجد حساب ولي أمر بنفس الرقم. اربط الطالب بهذا الحساب بدلاً من إنشاء حساب جديد.";
+            return RedirectToAction(nameof(ParentDetails), new { id = existingParentId.Value, studentId });
+        }
+
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateParent(CreateParentViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var (success, errors, parentId) = await _adminService.CreateParentAsync(model, adminId);
+        if (success)
+        {
+            TempData["SuccessMessage"] = model.StudentId.HasValue
+                ? $"تم إنشاء حساب ولي الأمر ({model.FullName}) وربطه بالطالب بنجاح."
+                : $"تم إنشاء حساب ولي الأمر ({model.FullName}) بنجاح.";
+            return RedirectToAction(nameof(ParentDetails), new { id = parentId });
+        }
+
+        foreach (var error in errors)
+        {
+            ModelState.AddModelError(string.Empty, error);
+        }
+        return View(model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ParentDetails(int id, int? studentId = null)
+    {
+        var model = await _adminService.GetParentDetailsAsync(id, studentId);
+        if (model == null) return NotFound();
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> LinkStudent(int parentId, int studentId)
+    {
+        var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var (success, message) = await _adminService.LinkStudentAsync(parentId, studentId, adminId);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = message;
+        return RedirectToAction(nameof(ParentDetails), new { id = parentId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UnlinkStudent(int parentId, int studentId)
+    {
+        var (success, message) = await _adminService.UnlinkStudentAsync(parentId, studentId);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = message;
+        return RedirectToAction(nameof(ParentDetails), new { id = parentId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleParentStatus(int id)
+    {
+        var (success, message) = await _adminService.ToggleParentStatusAsync(id);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = message;
+        return RedirectToAction(nameof(Parents));
+    }
+
     [HttpGet]
     public async Task<IActionResult> Payments(PaymentStatus? status = null)
     {
