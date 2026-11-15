@@ -38,6 +38,7 @@ flowchart LR
         UC17(["View Grades"])
         UC18(["Link to Child"])
         UC19(["View Child Progress and Grades"])
+        UC20(["Approve New Accounts"])
     end
 
     Admin --- UC1
@@ -46,6 +47,7 @@ flowchart LR
     Admin --- UC4
     Admin --- UC5
     Admin --- UC6
+    Admin --- UC20
 
     Teacher --- UC1
     Teacher --- UC7
@@ -67,7 +69,7 @@ flowchart LR
     Parent --- UC19
 ```
 
-> Relationships: *Watch Lessons* and *Take Exam* **require** an approved enrollment (precondition from *Review Payment Requests*). *Take Exam* is followed by *Grade Essay Questions* when the exam has essay questions.
+> Relationships: *Login* is only possible after *Approve New Accounts* for Students and Parents. *Watch Lessons* and *Take Exam* **require** an approved enrollment (precondition from *Review Payment Requests*). *Take Exam* is followed by *Grade Essay Questions* when the exam has essay questions.
 
 ## 2.3 Use Case Descriptions
 
@@ -88,6 +90,15 @@ flowchart LR
 | Main flow | 1. Admin opens the Pending requests list. 2. Sees student, course, price, payment method and receipt image. 3. Approves the request. 4. System creates an Enrollment and notifies the student. |
 | Alternative | Admin rejects with a reason → request becomes Rejected, student can resubmit |
 | Postcondition | Request status updated; Enrollment created if approved |
+
+### UC-20 Approve New Accounts
+| Field | Description |
+|-------|-------------|
+| Actor | Admin |
+| Precondition | At least one Student or Parent has registered and is waiting |
+| Main flow | 1. Admin opens the Pending Users list. 2. Sees name, email, role and registration date. 3. Approves the account, which becomes active and can log in. |
+| Alternative | Admin rejects the request → the account request is deleted |
+| Postcondition | Approved users can log in; new Student and Parent accounts cannot log in before approval |
 
 ### UC-06 View Reports
 | Field | Description |

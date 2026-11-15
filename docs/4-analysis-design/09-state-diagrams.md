@@ -34,3 +34,16 @@ stateDiagram-v2
     Draft --> [*]: Deleted
     Hidden --> [*]: Deleted
 ```
+
+## 9.4 User Account
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: Student or Parent registers (IsActive = false)
+    Pending --> Active: Admin approves
+    Pending --> [*]: Admin rejects (request deleted)
+    Active --> Disabled: Admin deactivates
+    Disabled --> Active: Admin activates
+```
+
+> Teacher accounts are created by the admin and start as Active.

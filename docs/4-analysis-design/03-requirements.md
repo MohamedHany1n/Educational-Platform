@@ -10,6 +10,8 @@
 | FR-03 | The system shall restrict each page and action by role (Admin, Teacher, Student, Parent). |
 | FR-04 | The admin shall create, edit, activate/deactivate and delete teacher and student accounts. |
 | FR-05 | A parent shall be able to link to one or more student accounts. |
+| FR-28 | New Student and Parent accounts shall stay inactive until an admin approves them; inactive accounts cannot log in. |
+| FR-29 | The admin shall review pending registrations and approve or reject them. |
 
 ### Courses & Lessons
 | ID | Requirement |

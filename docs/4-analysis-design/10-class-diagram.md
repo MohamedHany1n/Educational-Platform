@@ -2,13 +2,13 @@
 
 ```mermaid
 classDiagram
-    class User {
+    class ApplicationUser {
         +int Id
         +string FullName
+        +string UserName
         +string Email
         +string PasswordHash
-        +string Phone
-        +Role Role
+        +string PhoneNumber
         +bool IsActive
         +DateTime CreatedAt
         +Login()
@@ -100,10 +100,10 @@ classDiagram
         +string TeacherFeedback
     }
 
-    User <|-- Admin
-    User <|-- Teacher
-    User <|-- Student
-    User <|-- Parent
+    ApplicationUser <|-- Admin
+    ApplicationUser <|-- Teacher
+    ApplicationUser <|-- Student
+    ApplicationUser <|-- Parent
 
     Teacher "1" --> "*" Course : teaches
     Course "1" *-- "*" Lesson : contains
@@ -125,4 +125,4 @@ classDiagram
     Parent "*" --> "*" Student : follows
 ```
 
-> In the database, the four roles are stored in one `Users` table with a `Role` column (table-per-hierarchy); in code they can be modeled as the `Role` enum or as subclasses.
+> In the code and the database there is one user class, `ApplicationUser` (table `AspNetUsers`). Admin, Teacher, Student and Parent are **roles** managed by ASP.NET Core Identity (`AspNetRoles` and `AspNetUserRoles`), not separate subclasses. The four boxes above show what each role can do.
