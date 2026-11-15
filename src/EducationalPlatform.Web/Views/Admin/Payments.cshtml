@@ -66,7 +66,7 @@
                                 <td>@item.Course.Title</td>
                                 <td class="fw-bold">@item.Amount.ToString("N2") ج.م</td>
                                 <td><span class="badge bg-secondary">@item.PaymentMethod</span></td>
-                                <td dir="ltr" class="text-end">
+                                <td dir="ltr" style="text-align:right">
                                     <div class="fw-bold">@item.TransactionNumber</div>
                                     @if (!string.IsNullOrEmpty(item.SenderPhoneNumber))
                                     {

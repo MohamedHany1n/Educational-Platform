@@ -20,6 +20,13 @@ public interface IAdminService
     Task<(bool Success, string Message)> LinkStudentAsync(int parentId, int studentId, int adminId);
     Task<(bool Success, string Message)> UnlinkStudentAsync(int parentId, int studentId);
     Task<(bool Success, string Message)> ToggleParentStatusAsync(int parentId);
+    Task<StudentListViewModel> GetStudentsAsync(string? search, string? status, int page);
+    Task<StudentDetailsViewModel?> GetStudentDetailsAsync(int studentId);
+    Task<EditStudentViewModel?> GetEditStudentAsync(int studentId);
+    Task<(bool Success, IEnumerable<string> Errors)> UpdateStudentAsync(EditStudentViewModel model);
+    Task<(bool Success, string Message)> ToggleStudentStatusAsync(int studentId);
+    Task<(bool Success, string Message)> DeleteStudentAsync(int studentId);
+    Task<(bool Success, string Message)> RestoreStudentAsync(int studentId);
     Task<List<PendingUserViewModel>> GetPendingUsersAsync();
     Task<(bool Success, string Message)> ApproveUserAsync(int userId);
     Task<(bool Success, string Message)> RejectUserAsync(int userId);

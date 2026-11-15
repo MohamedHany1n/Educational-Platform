@@ -66,6 +66,78 @@ public class AdminController : Controller
         return RedirectToAction(nameof(Teachers));
     }
 
+    // ---------------- Students ----------------
+
+    [HttpGet]
+    public async Task<IActionResult> Students(string? search = null, string? status = null, int page = 1)
+    {
+        var model = await _adminService.GetStudentsAsync(search, status, page);
+        return View(model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> StudentDetails(int id)
+    {
+        var model = await _adminService.GetStudentDetailsAsync(id);
+        if (model == null) return NotFound();
+        return View(model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> EditStudent(int id)
+    {
+        var model = await _adminService.GetEditStudentAsync(id);
+        if (model == null) return NotFound();
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditStudent(EditStudentViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var (success, errors) = await _adminService.UpdateStudentAsync(model);
+        if (success)
+        {
+            TempData["SuccessMessage"] = "تم حفظ بيانات الطالب بنجاح.";
+            return RedirectToAction(nameof(StudentDetails), new { id = model.Id });
+        }
+
+        foreach (var error in errors)
+        {
+            ModelState.AddModelError(string.Empty, error);
+        }
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleStudentStatus(int id)
+    {
+        var (success, message) = await _adminService.ToggleStudentStatusAsync(id);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = message;
+        return RedirectToAction(nameof(StudentDetails), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteStudent(int id)
+    {
+        var (success, message) = await _adminService.DeleteStudentAsync(id);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = message;
+        return RedirectToAction(nameof(Students));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RestoreStudent(int id)
+    {
+        var (success, message) = await _adminService.RestoreStudentAsync(id);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = message;
+        return RedirectToAction(nameof(StudentDetails), new { id });
+    }
+
     // ---------------- Parents ----------------
 
     [HttpGet]

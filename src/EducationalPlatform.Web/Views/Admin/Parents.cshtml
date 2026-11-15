@@ -52,7 +52,7 @@
                                 <td>@parent.Id</td>
                                 <td>@parent.FullName</td>
                                 <td>@parent.Email</td>
-                                <td dir="ltr" class="text-end">@(parent.PhoneNumber ?? "-")</td>
+                                <td dir="ltr" style="text-align:right">@(parent.PhoneNumber ?? "-")</td>
                                 <td>
                                     @if (parent.ChildrenCount == 0)
                                     {
