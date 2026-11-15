@@ -4,6 +4,7 @@ Detailed use case diagram and descriptions: [Use Cases](../4-analysis-design/02-
 
 ## Admin
 - As an admin, I want to create and deactivate teacher and student accounts so that I control who uses the platform.
+- As an admin, I want to approve or reject new student and parent registrations so that only real users can log in.
 - As an admin, I want to see pending payment requests with the receipt image so that I can approve or reject them.
 - As an admin, I want to view reports (users, enrollments, requests, revenue) so that I can follow the platform.
 
