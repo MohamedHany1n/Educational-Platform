@@ -69,6 +69,10 @@
                                     <form asp-action="ApproveUser" asp-route-id="@user.Id" method="post" class="d-inline">
                                         <button type="submit" class="btn btn-sm btn-success">قبول وتفعيل</button>
                                     </form>
+                                    @if (user.Role == "Student")
+                                    {
+                                        <a asp-action="CreateParent" asp-route-studentId="@user.Id" class="btn btn-sm btn-outline-primary">حساب ولي الأمر</a>
+                                    }
                                     <form asp-action="RejectUser" asp-route-id="@user.Id" method="post" class="d-inline">
                                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('تأكيد رفض وحذف هذا الطلب؟')">رفض</button>
                                     </form>
