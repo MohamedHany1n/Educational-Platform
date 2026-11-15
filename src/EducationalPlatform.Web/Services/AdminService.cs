@@ -121,6 +121,8 @@ public class AdminService : IAdminService
                 FullName = u.FullName,
                 Email = u.Email ?? string.Empty,
                 Role = "Student",
+                PhoneNumber = u.PhoneNumber,
+                ParentPhoneNumber = u.ParentPhoneNumber,
                 CreatedAt = u.CreatedAt
             });
 
@@ -132,6 +134,7 @@ public class AdminService : IAdminService
                 FullName = u.FullName,
                 Email = u.Email ?? string.Empty,
                 Role = "Parent",
+                PhoneNumber = u.PhoneNumber,
                 CreatedAt = u.CreatedAt
             });
 

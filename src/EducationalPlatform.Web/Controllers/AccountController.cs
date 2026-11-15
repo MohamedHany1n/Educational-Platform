@@ -3,6 +3,7 @@ using EducationalPlatform.Web.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace EducationalPlatform.Web.Controllers;
 
@@ -82,24 +83,36 @@ public class AccountController : Controller
     {
         if (!ModelState.IsValid) return View(model);
 
-        if (model.Role != "Student" && model.Role != "Parent")
+        var phone = model.PhoneNumber.Trim();
+        var parentPhone = model.ParentPhoneNumber.Trim();
+
+        if (phone == parentPhone)
         {
-            ModelState.AddModelError(nameof(model.Role), "نوع الحساب غير مسموح.");
+            ModelState.AddModelError(nameof(model.ParentPhoneNumber), "رقم ولي الأمر يجب أن يختلف عن رقم الطالب.");
             return View(model);
         }
 
+        if (await _userManager.Users.AnyAsync(u => u.PhoneNumber == phone))
+        {
+            ModelState.AddModelError(nameof(model.PhoneNumber), "رقم الهاتف مسجل بالفعل.");
+            return View(model);
+        }
+
+        // Only students register themselves. Parent accounts are created and linked by the admin.
         var user = new ApplicationUser
         {
             UserName = model.Email,
             Email = model.Email,
             FullName = model.FullName,
+            PhoneNumber = phone,
+            ParentPhoneNumber = parentPhone,
             IsActive = false
         };
 
         var result = await _userManager.CreateAsync(user, model.Password);
         if (result.Succeeded)
         {
-            await _userManager.AddToRoleAsync(user, model.Role);
+            await _userManager.AddToRoleAsync(user, "Student");
             TempData["SuccessMessage"] = "تم تسجيل بياناتك بنجاح، حسابك الآن في انتظار موافقة الإدارة.";
             return RedirectToAction(nameof(Login));
         }

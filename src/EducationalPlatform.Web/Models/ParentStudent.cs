@@ -8,4 +8,10 @@ public class ParentStudent
 
     public int StudentId { get; set; }
     public ApplicationUser Student { get; set; } = null!;
+
+    public DateTime LinkedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>The admin who linked the parent to the student.</summary>
+    public int? LinkedByAdminId { get; set; }
+    public ApplicationUser? LinkedByAdmin { get; set; }
 }
