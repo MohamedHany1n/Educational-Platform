@@ -12,6 +12,7 @@ erDiagram
     APPLICATION_USER ||--o{ LESSON_PROGRESS : "completes"
     APPLICATION_USER ||--o{ PARENT_STUDENT : "parent"
     APPLICATION_USER ||--o{ PARENT_STUDENT : "child"
+    APPLICATION_USER ||--o{ PARENT_STUDENT : "linked by admin"
     APPLICATION_USER ||--o{ USER_ROLE : "has role"
     ROLE ||--o{ USER_ROLE : "assigned as"
     COURSE ||--o{ LESSON : "contains"
@@ -33,7 +34,10 @@ erDiagram
         string Email
         string PasswordHash
         string PhoneNumber
+        string ParentPhoneNumber
         bool IsActive
+        bool IsDeleted
+        datetime ApprovedAt
         datetime CreatedAt
     }
     ROLE {
@@ -47,6 +51,8 @@ erDiagram
     PARENT_STUDENT {
         int ParentId PK, FK
         int StudentId PK, FK
+        datetime LinkedAt
+        int LinkedByAdminId FK
     }
     COURSE {
         int Id PK
@@ -72,6 +78,8 @@ erDiagram
         int CourseId FK
         decimal Amount
         string PaymentMethod
+        string TransactionNumber UK
+        string SenderPhoneNumber
         string ReceiptImagePath
         string Status
         int ReviewedByAdminId FK
@@ -147,8 +155,11 @@ erDiagram
 | UserName | nvarchar(256) | UNIQUE (same value as the email) |
 | Email | nvarchar(256) | NULL, indexed |
 | PasswordHash | nvarchar(max) | Hashed by Identity, never the plain password |
-| PhoneNumber | nvarchar(max) | NULL |
-| IsActive | bit | NOT NULL. `false` means waiting for admin approval or disabled |
+| PhoneNumber | nvarchar(max) | Required for students and parents (format 01xxxxxxxxx). The application keeps it unique |
+| ParentPhoneNumber | nvarchar(15) | NULL. Students only: the parent's phone entered at registration, used by the admin to create and link the parent account |
+| IsActive | bit | NOT NULL. `false` means waiting for approval, suspended or deleted |
+| IsDeleted | bit | NOT NULL, default 0. Soft delete: the account is hidden and cannot log in, but its history is kept |
+| ApprovedAt | datetime2 | NULL. Time of admin approval. Empty means the account was never approved (pending) |
 | CreatedAt | datetime2 | NOT NULL |
 
 Identity adds more columns (security stamp, lockout, email confirmation, and others) that are managed by the framework.
@@ -170,6 +181,8 @@ Identity adds more columns (security stamp, lockout, email confirmation, and oth
 |--------|------|-------------|
 | ParentId | int | PK, FK → AspNetUsers.Id |
 | StudentId | int | PK, FK → AspNetUsers.Id |
+| LinkedAt | datetime2 | NOT NULL |
+| LinkedByAdminId | int | FK → AspNetUsers.Id, NULL (the admin who linked them) |
 
 ### Courses
 | Column | Type | Constraints |
@@ -201,6 +214,8 @@ Identity adds more columns (security stamp, lockout, email confirmation, and oth
 | CourseId | int | FK → Courses.Id |
 | Amount | decimal(10,2) | NOT NULL (price at request time) |
 | PaymentMethod | nvarchar(20) | NOT NULL, CHECK in (InstaPay, VodafoneCash) |
+| TransactionNumber | nvarchar(50) | NOT NULL. UNIQUE together with PaymentMethod |
+| SenderPhoneNumber | nvarchar(15) | NULL (wallet or account the student paid from) |
 | ReceiptImagePath | nvarchar(300) | NOT NULL |
 | Status | nvarchar(20) | NOT NULL, CHECK in (Pending, Approved, Rejected) |
 | ReviewedByAdminId | int | FK → AspNetUsers.Id, NULL |
@@ -279,7 +294,7 @@ Identity adds more columns (security stamp, lockout, email confirmation, and oth
 - User (Teacher) 1 — N Course
 - Course 1 — N Lesson, Course 1 — N Exam
 - User (Student) N — M Course through Enrollment
-- User (Parent) N — M User (Student) through ParentStudent
+- User (Parent) N — M User (Student) through ParentStudent (linked by an admin)
 - PaymentRequest 1 — 0..1 Enrollment
 - Exam 1 — N Question; Question 1 — N QuestionOption
 - ExamAttempt 1 — N AttemptAnswer
@@ -294,4 +309,7 @@ Identity adds more columns (security stamp, lockout, email confirmation, and oth
 ## 5.5 Key Business Rules in the Schema
 - A student cannot enroll twice in the same course (UNIQUE StudentId + CourseId).
 - A payment request creates at most one enrollment.
+- The same transaction number cannot be used twice with the same payment method (UNIQUE PaymentMethod + TransactionNumber), so one receipt cannot be reused.
+- Students are never physically deleted by the admin: `IsDeleted` hides them and keeps payments, progress and grades.
+- Parent accounts are created by the admin, who links them to students (`LinkedByAdminId`).
 - Only MCQ questions have options; only Essay answers use `EssayText`.

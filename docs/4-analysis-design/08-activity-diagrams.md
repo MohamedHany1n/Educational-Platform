@@ -8,8 +8,8 @@ flowchart TD
     B --> C{"Already enrolled?"}
     C -- Yes --> D["Open course content"] --> Z(["End"])
     C -- No --> E["Pay through InstaPay or Vodafone Cash"]
-    E --> F["Choose payment method and upload receipt"]
-    F --> G["System saves request: Pending"]
+    E --> F["Choose payment method, enter transaction number and upload receipt"]
+    F --> G["System checks the transaction number is new and saves request: Pending"]
     G --> H["Admin reviews receipt and amount"]
     H --> I{"Valid payment?"}
     I -- Yes --> J["Admin approves"]

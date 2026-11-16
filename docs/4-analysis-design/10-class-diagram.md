@@ -9,13 +9,18 @@ classDiagram
         +string Email
         +string PasswordHash
         +string PhoneNumber
+        +string ParentPhoneNumber
         +bool IsActive
+        +bool IsDeleted
+        +DateTime? ApprovedAt
         +DateTime CreatedAt
         +Login()
         +Logout()
     }
     class Admin {
         +ManageUsers()
+        +ManageStudents()
+        +CreateParentAndLinkStudents()
         +ReviewPaymentRequest()
         +ViewReports()
     }
@@ -31,7 +36,6 @@ classDiagram
         +ViewGrades()
     }
     class Parent {
-        +LinkToChild()
         +ViewChildProgress()
     }
     class Course {
@@ -53,6 +57,8 @@ classDiagram
         +int Id
         +decimal Amount
         +PaymentMethod Method
+        +string TransactionNumber
+        +string SenderPhoneNumber
         +string ReceiptImagePath
         +RequestStatus Status
         +string RejectionReason

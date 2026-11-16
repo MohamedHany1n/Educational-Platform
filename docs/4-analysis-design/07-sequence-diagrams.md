@@ -40,10 +40,11 @@ sequenceDiagram
     participant DB as SQL Server
 
     S->>FE: Pay via InstaPay or Vodafone Cash (outside system)
-    S->>FE: Choose method and upload receipt
-    FE->>API: POST /Payments/Create (courseId, method, receipt image)
+    S->>FE: Choose method, enter transaction number and upload receipt
+    FE->>API: POST /Payments/Create (courseId, method, transaction number, receipt image)
     API->>SV: CreateRequest(model)
     SV->>DB: Check not already enrolled
+    SV->>DB: Check the transaction number was not used before (same method)
     SV->>DB: Get course price
     SV->>FS: Save receipt image
     SV->>DB: Insert PaymentRequest (Status = Pending)

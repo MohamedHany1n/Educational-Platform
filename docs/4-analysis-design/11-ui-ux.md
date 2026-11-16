@@ -11,7 +11,7 @@
 |     Password[______________________]       |
 |                                            |
 |              [      Login      ]           |
-|        New student or parent? Register     |
+|            New student? Register           |
 +--------------------------------------------+
 ```
 
@@ -33,6 +33,7 @@
 +--------------- Payment Request (modal) ------------------+
 |  Course: ____________   Amount: 500 EGP                  |
 |  Payment method:  (o) InstaPay   ( ) Vodafone Cash       |
+|  Transaction no.: [______________]                       |
 |  Receipt image:   [ Choose file ]                        |
 |                     [ Submit Request ]                   |
 +----------------------------------------------------------+
@@ -101,6 +102,45 @@
 +----------------------------------------------------------------------+
 ```
 
+### Student — Registration
+```
++--------------------------------------------+
+|            Create Student Account          |
+|                                            |
+|  Full name         [__________________]    |
+|  Email             [__________________]    |
+|  Student phone     [01012345678_______]    |
+|  Parent phone      [01112345678_______]    |
+|  Password          [__________________]    |
+|  Confirm password  [__________________]    |
+|                                            |
+|              [    Register    ]            |
++--------------------------------------------+
+```
+
+### Admin — Students
+```
++----------------------------------------------------------------------+
+| Students     Search: [__________]   Status: [All v]                  |
++----------------------------------------------------------------------+
+| Name  | Email        | Phone       | Parent phone | Status | Actions  |
+| Omar  | omar@x.com   | 01012345678 | 01112345678  | Active | Details / Edit / Suspend / Delete |
+| Sara  | sara@x.com   | 01212345678 | 01512345678  | Pending| Details  |
++----------------------------------------------------------------------+
+```
+
+### Admin — Create Parent and Link Student
+```
++--------------------------------------------+
+|  Student: Omar Ahmed                       |
+|  Parent phone    [01112345678]  (from registration)
+|  Parent name     [__________________]      |
+|  Email           [__________________]      |
+|  Password        [__________________]      |
+|            [  Create and link  ]           |
++--------------------------------------------+
+```
+
 ### Admin — Reports
 ```
 +----------------------------------------------------------+
@@ -123,7 +163,7 @@
 ## 11.2 Navigation per Role
 | Role | Main menu |
 |------|-----------|
-| Admin | Dashboard, Users, Courses, Payment Requests, Reports |
+| Admin | Dashboard, Teachers, Students, Parents, Pending Accounts, Payment Requests, Reports |
 | Teacher | My Courses, Exams, Submissions, Results |
 | Student | Courses, My Courses, My Requests, My Grades |
 | Parent | My Children, Progress, Grades |
@@ -151,4 +191,4 @@
 - Text contrast ratio at least 4.5:1.
 - All inputs have labels; forms are keyboard-navigable.
 - Status is shown by text plus color, never color only.
-- Responsive layout (mobile first), RTL support for Arabic content.
+- Responsive layout (mobile first), The interface is Arabic and right-to-left (Bootstrap RTL).
