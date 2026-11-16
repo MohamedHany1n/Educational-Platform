@@ -10,6 +10,12 @@ public class HomeController : Controller
 {
     public IActionResult Index()
     {
+        if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+            return RedirectToAction("Index", "Admin");
+
+        // When your dashboard is ready, send your role to it here, for example:
+        // if (User.IsInRole("Teacher")) return RedirectToAction("Index", "Teacher");
+
         return View();
     }
 

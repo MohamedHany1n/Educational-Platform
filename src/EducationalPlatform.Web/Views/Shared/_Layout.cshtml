@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - EducationalPlatform.Web</title>
+    <title>@ViewData["Title"] - المنصة التعليمية</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -13,7 +13,7 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">EducationalPlatform.Web</a>
+                <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index">المنصة التعليمية</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -21,36 +21,29 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">الرئيسية</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                                        </ul>
+                        @* Each role has its own menu file in Views/Shared/Nav. Add your links in your role's file. *@
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <partial name="Nav/_AdminNav" />
+                        }
+                        @if (User.IsInRole("Teacher"))
+                        {
+                            <partial name="Nav/_TeacherNav" />
+                        }
+                        @if (User.IsInRole("Student"))
+                        {
+                            <partial name="Nav/_StudentNav" />
+                        }
+                        @if (User.IsInRole("Parent"))
+                        {
+                            <partial name="Nav/_ParentNav" />
+                        }
+                    </ul>
                     <ul class="navbar-nav">
                         @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
-                            @if (User.IsInRole("Admin"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link fw-bold text-primary" asp-controller="Admin" asp-action="Index">لوحة الإدارة</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Admin" asp-action="Teachers">المدرسين</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Admin" asp-action="Students">الطلاب</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Admin" asp-action="Parents">أولياء الأمور</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Admin" asp-action="Payments">الإيصالات</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Admin" asp-action="PendingUsers">طلبات الحسابات</a>
-                                </li>
-                            }
                             <li class="nav-item">
                                 <span class="nav-link text-dark">مرحباً، @User.Identity.Name</span>
                             </li>
@@ -85,7 +78,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2026 - EducationalPlatform.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2026 - المنصة التعليمية - مشروع DEPI
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

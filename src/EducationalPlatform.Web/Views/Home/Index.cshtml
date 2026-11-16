@@ -1,8 +1,54 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "الرئيسية";
+    var roleText = User.IsInRole("Teacher") ? "حسابك: مدرس"
+        : User.IsInRole("Student") ? "حسابك: طالب"
+        : User.IsInRole("Parent") ? "حسابك: ولي أمر"
+        : "";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@if (User.Identity != null && User.Identity.IsAuthenticated)
+{
+    <div class="text-center py-5">
+        <h2 class="fw-bold">مرحباً، @User.Identity.Name</h2>
+        <p class="lead text-muted">@roleText</p>
+        <p class="text-muted">ستظهر صفحاتك في القائمة العلوية.</p>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <h1 class="display-5 fw-bold">المنصة التعليمية</h1>
+        <p class="lead text-muted">دروس فيديو وامتحانات، ومتابعة من ولي الأمر، كل ذلك في مكان واحد.</p>
+        <div class="mt-4">
+            <a class="btn btn-primary btn-lg ms-2" asp-controller="Account" asp-action="Login">تسجيل الدخول</a>
+            <a class="btn btn-outline-primary btn-lg" asp-controller="Account" asp-action="Register">إنشاء حساب طالب</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-2">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">للطالب</h5>
+                    <p class="card-text text-muted">اشترك في الكورسات، وشاهد الدروس، وامتحن واعرف درجتك.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">للمدرس</h5>
+                    <p class="card-text text-muted">أنشئ كورساتك ودروسك وامتحاناتك، وصحّح أسئلة المقال.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">لولي الأمر</h5>
+                    <p class="card-text text-muted">تابع تقدم ابنك ودرجاته أولاً بأول. ويتم إنشاء حساب ولي الأمر عن طريق الإدارة.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
