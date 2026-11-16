@@ -9,6 +9,7 @@ The system is a server-rendered MVC website, so the "endpoints" are page routes.
 | Account | GET, POST | `/Account/Register` | Public | Register as a student (waits for admin approval) |
 | Account | GET, POST | `/Account/Login` | Public | Login and redirect to the role dashboard |
 | Account | POST | `/Account/Logout` | Any | Logout |
+| Profile | GET, POST | `/Profile/ChangePassword` | Any logged-in user | Change own password |
 | Admin | GET | `/Admin` | Admin | Dashboard |
 | Admin | GET | `/Admin/PendingUsers` | Admin | List pending student registrations; approve with POST `/Admin/ApproveUser/{id}` or reject with POST `/Admin/RejectUser/{id}` |
 | Admin | GET | `/Admin/Students` | Admin | List, search (name, email, phone) and filter students by status, with paging |
@@ -95,6 +96,8 @@ On success the user is redirected to `/Payments/Mine`, where the new request app
 | TC-18 | Admin restores a deleted student | Student appears as suspended |
 | TC-19 | Admin creates a parent and links a student | Parent logs in and sees only the linked child |
 | TC-20 | Admin approves a pending student | Student can log in and the approval time is saved |
+| TC-21 | User changes the password with a wrong current password | Error message, password unchanged |
+| TC-22 | User changes the password correctly | Stays logged in, can log in with the new password |
 
 **UAT checklist:** admin approves a payment ✔ · teacher publishes a course ✔ · student watches a lesson and takes an exam ✔ · parent sees grades ✔
 

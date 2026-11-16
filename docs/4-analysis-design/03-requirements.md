@@ -14,6 +14,7 @@
 | FR-29 | The admin shall review pending registrations and approve or reject them; the approval time is recorded. |
 | FR-30 | Phone numbers shall follow the Egyptian mobile format (01xxxxxxxxx), a phone number cannot belong to two accounts, and the parent phone shall differ from the student phone. |
 | FR-31 | A deleted student shall be hidden and unable to log in while payments, progress and grades are kept; the admin can restore the account, which returns as suspended. |
+| FR-33 | Every logged-in user shall be able to change their own password. |
 
 ### Courses & Lessons
 | ID | Requirement |
