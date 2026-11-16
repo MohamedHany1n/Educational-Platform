@@ -57,7 +57,7 @@ public class AccountController : Controller
             return View(model);
         }
 
-        if (!user.IsActive)
+        if (!user.IsActive || user.IsDeleted)
         {
             ModelState.AddModelError(string.Empty, "حسابك في انتظار موافقة الإدارة أو تم إيقافه.");
             return View(model);
