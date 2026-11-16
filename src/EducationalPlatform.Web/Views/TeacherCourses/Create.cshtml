@@ -1,0 +1,11 @@
+@model EducationalPlatform.Web.Models.ViewModels.Teacher.CourseFormViewModel
+@{ ViewData["Title"] = "كورس جديد"; }
+
+<h2 class="mb-4">كورس جديد</h2>
+<form asp-action="Create" method="post" enctype="multipart/form-data">
+    <partial name="_CourseForm" model="Model" />
+    <button type="submit" class="btn btn-primary">حفظ</button>
+    <a asp-action="Index" class="btn btn-secondary">إلغاء</a>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
