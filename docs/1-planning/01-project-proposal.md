@@ -21,6 +21,7 @@ Teachers who want to teach online usually rely on scattered tools (chat groups, 
 ## Scope
 **In scope**
 - Authentication and role-based authorization (Admin, Teacher, Student, Parent)
+- Admin management of students and parents (approve registrations, create parent accounts and link them to students, suspend, soft delete and restore)
 - Course, lesson and exam management
 - Manual payment workflow (receipt upload + admin approval)
 - Exam taking, automatic grading (MCQ) and manual grading (essay)

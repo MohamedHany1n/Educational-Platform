@@ -39,11 +39,14 @@ stateDiagram-v2
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Pending: Student or Parent registers (IsActive = false)
-    Pending --> Active: Admin approves
+    [*] --> Pending: Student registers (IsActive = false, never approved)
+    Pending --> Active: Admin approves (ApprovedAt saved)
     Pending --> [*]: Admin rejects (request deleted)
-    Active --> Disabled: Admin deactivates
-    Disabled --> Active: Admin activates
+    Active --> Suspended: Admin suspends
+    Suspended --> Active: Admin activates
+    Active --> Deleted: Admin deletes (soft delete)
+    Suspended --> Deleted: Admin deletes (soft delete)
+    Deleted --> Suspended: Admin restores
 ```
 
-> Teacher accounts are created by the admin and start as Active.
+> Teacher and Parent accounts are created by the admin and start as Active. A pending, suspended or deleted account cannot log in.
