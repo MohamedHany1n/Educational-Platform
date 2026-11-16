@@ -1,0 +1,103 @@
+﻿@model EducationalPlatform.Web.Models.ViewModels.CreateExamViewModel
+
+@{
+    ViewData["Title"] = "إنشاء امتحان";
+}
+
+<div class="container mt-4" dir="rtl">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">إنشاء امتحان جديد</h4>
+                </div>
+
+                <div class="card-body">
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success">
+                            @TempData["SuccessMessage"]
+                        </div>
+                    }
+
+                    <form asp-controller="Exams"
+                          asp-action="Create"
+                          method="post">
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="text-danger mb-3">
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Title"
+                                   class="form-label">عنوان الامتحان</label>
+
+                            <input asp-for="Title"
+                                   class="form-control"
+                                   placeholder="مثال: امتحان الفصل الأول" />
+
+                            <span asp-validation-for="Title"
+                                  class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="CourseId"
+                                   class="form-label">الكورس</label>
+
+                            <select asp-for="CourseId"
+                                    asp-items="ViewBag.Courses"
+                                    class="form-select">
+                                <option value="">اختر الكورس</option>
+                            </select>
+
+                            <span asp-validation-for="CourseId"
+                                  class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="DurationMinutes"
+                                   class="form-label">مدة الامتحان بالدقائق</label>
+
+                            <input asp-for="DurationMinutes"
+                                   type="number"
+                                   class="form-control"
+                                   min="1"
+                                   max="300" />
+
+                            <span asp-validation-for="DurationMinutes"
+                                  class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="MaxAttempts"
+                                   class="form-label">عدد المحاولات المسموح بها</label>
+
+                            <input asp-for="MaxAttempts"
+                                   type="number"
+                                   class="form-control"
+                                   min="1"
+                                   max="20" />
+
+                            <span asp-validation-for="MaxAttempts"
+                                  class="text-danger"></span>
+                        </div>
+
+                        <button type="submit"
+                                class="btn btn-primary w-100">
+                            إنشاء الامتحان
+                        </button>
+
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

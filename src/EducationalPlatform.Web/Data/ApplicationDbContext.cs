@@ -100,16 +100,50 @@ public class ApplicationDbContext
         // ---------- Exams ----------
         builder.Entity<Exam>(e =>
         {
-            e.Property(x => x.Title).HasMaxLength(150).IsRequired();
-            e.HasOne(x => x.Course).WithMany(c => c.Exams).HasForeignKey(x => x.CourseId);
+            e.Property(x => x.Title)
+                .HasMaxLength(150)
+                .IsRequired();
+
+            e.HasOne(x => x.Course)
+                .WithMany(c => c.Exams)
+                .HasForeignKey(x => x.CourseId);
+
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint(
+                    "CK_Exams_DurationMinutes",
+                    "[DurationMinutes] > 0");
+
+                t.HasCheckConstraint(
+                    "CK_Exams_MaxAttempts",
+                    "[MaxAttempts] > 0");
+            });
         });
 
         builder.Entity<Question>(e =>
         {
-            e.Property(q => q.Type).HasConversion<string>().HasMaxLength(10);
-            e.Property(q => q.Marks).HasColumnType("decimal(5,2)");
-            e.HasOne(q => q.Exam).WithMany(x => x.Questions)
-                .HasForeignKey(q => q.ExamId).OnDelete(DeleteBehavior.Cascade);
+            e.Property(q => q.Type)
+                .HasConversion<string>()
+                .HasMaxLength(10);
+
+            e.Property(q => q.Marks)
+                .HasColumnType("decimal(5,2)");
+
+            e.HasOne(q => q.Exam)
+                .WithMany(x => x.Questions)
+                .HasForeignKey(q => q.ExamId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint(
+                    "CK_Questions_Marks",
+                    "[Marks] > 0");
+
+                t.HasCheckConstraint(
+                    "CK_Questions_Type",
+                    "[Type] IN ('MCQ', 'Essay')");
+            });
         });
 
         builder.Entity<QuestionOption>(e =>
@@ -121,10 +155,34 @@ public class ApplicationDbContext
 
         builder.Entity<ExamAttempt>(e =>
         {
-            e.Property(a => a.Status).HasConversion<string>().HasMaxLength(20);
-            e.Property(a => a.TotalScore).HasColumnType("decimal(6,2)");
-            e.HasOne(a => a.Exam).WithMany(x => x.Attempts).HasForeignKey(a => a.ExamId);
-            e.HasOne(a => a.Student).WithMany(u => u.ExamAttempts).HasForeignKey(a => a.StudentId);
+            e.Property(a => a.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            e.Property(a => a.TotalScore)
+                .HasColumnType("decimal(6,2)");
+
+            e.HasOne(a => a.Exam)
+                .WithMany(x => x.Attempts)
+                .HasForeignKey(a => a.ExamId);
+
+            e.HasOne(a => a.Student)
+                .WithMany(u => u.ExamAttempts)
+                .HasForeignKey(a => a.StudentId);
+
+            e.HasIndex(a => new
+            {
+                a.ExamId,
+                a.StudentId,
+                a.AttemptNumber
+            }).IsUnique();
+
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint(
+                    "CK_ExamAttempts_AttemptNumber",
+                    "[AttemptNumber] >= 1");
+            });
         });
 
         builder.Entity<AttemptAnswer>(e =>
@@ -135,6 +193,11 @@ public class ApplicationDbContext
                 .HasForeignKey(a => a.AttemptId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(a => a.Question).WithMany().HasForeignKey(a => a.QuestionId);
             e.HasOne(a => a.SelectedOption).WithMany().HasForeignKey(a => a.SelectedOptionId);
+            e.HasIndex(a => new
+            {
+                a.AttemptId,
+                a.QuestionId
+            }).IsUnique();
         });
 
         // SQL Server does not allow several cascade-delete paths to the same table,

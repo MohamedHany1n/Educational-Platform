@@ -140,11 +140,12 @@ namespace EducationalPlatform.Web.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AttemptId");
-
                     b.HasIndex("QuestionId");
 
                     b.HasIndex("SelectedOptionId");
+
+                    b.HasIndex("AttemptId", "QuestionId")
+                        .IsUnique();
 
                     b.ToTable("AttemptAnswers");
                 });
@@ -241,6 +242,9 @@ namespace EducationalPlatform.Web.Migrations
                     b.Property<bool>("IsPublished")
                         .HasColumnType("bit");
 
+                    b.Property<int>("MaxAttempts")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -250,7 +254,12 @@ namespace EducationalPlatform.Web.Migrations
 
                     b.HasIndex("CourseId");
 
-                    b.ToTable("Exams");
+                    b.ToTable("Exams", t =>
+                        {
+                            t.HasCheckConstraint("CK_Exams_DurationMinutes", "[DurationMinutes] > 0");
+
+                            t.HasCheckConstraint("CK_Exams_MaxAttempts", "[MaxAttempts] > 0");
+                        });
                 });
 
             modelBuilder.Entity("EducationalPlatform.Web.Models.ExamAttempt", b =>
@@ -260,6 +269,9 @@ namespace EducationalPlatform.Web.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AttemptNumber")
+                        .HasColumnType("int");
 
                     b.Property<int>("ExamId")
                         .HasColumnType("int");
@@ -283,11 +295,15 @@ namespace EducationalPlatform.Web.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ExamId");
-
                     b.HasIndex("StudentId");
 
-                    b.ToTable("ExamAttempts");
+                    b.HasIndex("ExamId", "StudentId", "AttemptNumber")
+                        .IsUnique();
+
+                    b.ToTable("ExamAttempts", t =>
+                        {
+                            t.HasCheckConstraint("CK_ExamAttempts_AttemptNumber", "[AttemptNumber] >= 1");
+                        });
                 });
 
             modelBuilder.Entity("EducationalPlatform.Web.Models.Lesson", b =>
@@ -463,7 +479,12 @@ namespace EducationalPlatform.Web.Migrations
 
                     b.HasIndex("ExamId");
 
-                    b.ToTable("Questions");
+                    b.ToTable("Questions", t =>
+                        {
+                            t.HasCheckConstraint("CK_Questions_Marks", "[Marks] > 0");
+
+                            t.HasCheckConstraint("CK_Questions_Type", "[Type] IN ('MCQ', 'Essay')");
+                        });
                 });
 
             modelBuilder.Entity("EducationalPlatform.Web.Models.QuestionOption", b =>

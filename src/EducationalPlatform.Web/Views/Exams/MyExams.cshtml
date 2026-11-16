@@ -1,0 +1,138 @@
+﻿@model List<EducationalPlatform.Web.ViewModels.MyExamViewModel>
+
+@{
+    ViewData["Title"] = "امتحاناتي";
+}
+
+<div class="container mt-4" dir="rtl">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>امتحاناتي</h2>
+
+        <a asp-action="Create" class="btn btn-primary">
+            + إنشاء امتحان جديد
+        </a>
+    </div>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">
+            لم تقم بإنشاء أي امتحانات حتى الآن.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover text-center align-middle">
+
+                <thead class="table-light">
+                    <tr>
+                       
+                        <th>اسم الامتحان</th>
+                        <th>الكورس</th>
+                        <th>المدة</th>
+                        <th>الأسئلة</th>
+                        <th>المحاولات</th>
+                        <th>الحالة</th>
+                        <th>إدارة النشر</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var exam in Model)
+                    {
+                        <tr>
+                            <td class="table-content text-start">
+                                @exam.Title
+                            </td>
+                            <td>@exam.CourseTitle</td>
+                            <td>@exam.DurationMinutes دقيقة</td>
+                            <td>@exam.QuestionsCount</td>
+                            <td>@exam.MaxAttempts</td>
+                            <td>
+                                @if (exam.IsPublished)
+                                {
+                                    <span class="badge bg-success">منشور</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">مسودة</span>
+                                }
+                            </td>
+                            <td>
+                                <form asp-action="TogglePublish"
+                                      asp-route-id="@exam.Id"
+                                      method="post">
+
+                                    @if (exam.IsPublished)
+                                    {
+                                        <button type="submit"
+                                                class="btn btn-sm btn-warning">
+                                            إلغاء النشر
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="submit"
+                                                class="btn btn-sm btn-success">
+                                            نشر الامتحان
+                                        </button>
+                                    }
+
+                                </form>
+                            </td>
+
+                            <td>
+                                <div class="action-buttons">
+
+                                    <a asp-action="Edit"
+                                       asp-route-id="@exam.Id"
+                                       class="btn btn-sm btn-primary">
+                                        تعديل
+                                    </a>
+
+                                    <a asp-action="ManageQuestions"
+                                       asp-route-examId="@exam.Id"
+                                       class="btn btn-sm btn-info">
+                                        إدارة الأسئلة
+                                    </a>
+
+                                    <form asp-action="DeleteExam"
+                                          asp-route-id="@exam.Id"
+                                          method="post"
+                                          onsubmit="return confirm('هل أنت متأكد من حذف الامتحان بالكامل وجميع أسئلته؟');">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            حذف الامتحان
+                                        </button>
+                                    </form>
+
+                                </div>
+                            </td>
+
+                            
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+        </div>
+    }
+
+</div>

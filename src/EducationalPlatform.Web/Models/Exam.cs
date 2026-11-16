@@ -14,4 +14,6 @@ public class Exam
 
     public ICollection<Question> Questions { get; set; } = new List<Question>();
     public ICollection<ExamAttempt> Attempts { get; set; } = new List<ExamAttempt>();
+
+    public int MaxAttempts { get; set; } = 1;
 }

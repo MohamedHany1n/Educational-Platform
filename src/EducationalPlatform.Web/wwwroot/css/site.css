@@ -36,3 +36,35 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+
+/* Table content */
+.table-content {
+    max-width: 350px;
+    min-width: 150px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.7;
+}
+
+/* Action buttons container */
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    min-width: 170px;
+}
+
+    /* Consistent button sizing */
+    .action-buttons .btn {
+        min-width: 85px;
+        white-space: nowrap;
+    }
+
+/* Table cells */
+.table td,
+.table th {
+    vertical-align: middle;
+}

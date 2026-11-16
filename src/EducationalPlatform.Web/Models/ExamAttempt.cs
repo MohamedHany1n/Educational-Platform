@@ -18,5 +18,6 @@ public class ExamAttempt
     public DateTime StartedAt { get; set; } = DateTime.UtcNow;
     public DateTime? SubmittedAt { get; set; }
 
+    public int AttemptNumber { get; set; }
     public ICollection<AttemptAnswer> Answers { get; set; } = new List<AttemptAnswer>();
 }
