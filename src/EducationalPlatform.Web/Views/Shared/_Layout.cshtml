@@ -51,6 +51,32 @@
                                     <a class="nav-link text-dark" asp-controller="Admin" asp-action="PendingUsers">طلبات الحسابات</a>
                                 </li>
                             }
+                            @if (User.IsInRole("Teacher"))
+                            {
+                                     @if (User.IsInRole("Teacher"))
+                                    {
+                                        <li class="nav-item">
+                                            <a class="nav-link fw-bold text-success"
+                                               asp-controller="Exams"
+                                               asp-action="Create">
+                                                إنشاء امتحان
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link fw-bold text-primary"
+                                               asp-controller="Exams"
+                                               asp-action="MyExams">
+                                                امتحاناتي
+                                            </a>
+                                        </li>
+                                    }
+                            }
+
+                            @if (User.IsInRole("Student"))
+                            {
+                              <li class="nav-item">
+                                <a class="nav-link fw-bold text-primary"  asp-controller="StudentExams" asp-action="Available"> الامتحانات </a> </li>
+                             }
                             <li class="nav-item">
                                 <span class="nav-link text-dark">مرحباً، @User.Identity.Name</span>
                             </li>

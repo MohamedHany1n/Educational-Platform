@@ -1,0 +1,155 @@
+﻿@model EducationalPlatform.Web.ViewModels.EditQuestionViewModel
+
+@{
+    ViewData["Title"] = "تعديل السؤال";
+}
+
+<div class="container mt-4" dir="rtl">
+    <h2 class="mb-4">تعديل السؤال</h2>
+
+    <form asp-action="EditQuestion" method="post">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ExamId" />
+
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label asp-for="Text" class="form-label">نص السؤال</label>
+            <textarea asp-for="Text" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Text" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Type" class="form-label">نوع السؤال</label>
+            <select asp-for="Type"
+                    asp-items="Html.GetEnumSelectList<EducationalPlatform.Web.Models.Enums.QuestionType>()"
+                    class="form-select"
+                    id="questionType">
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Marks" class="form-label">درجة السؤال</label>
+            <input asp-for="Marks" type="number" step="0.5" class="form-control" />
+            <span asp-validation-for="Marks" class="text-danger"></span>
+        </div>
+
+        <div id="mcqSection">
+            <label class="form-label">الاختيارات (حدد الإجابات الصحيحة)</label>
+
+            <div id="optionsContainer">
+                @for (int i = 0; i < Model.Options.Count; i++)
+                {
+                    <div class="input-group mb-2 option-item">
+                        <div class="input-group-text">
+                            <input type="checkbox"
+                                   name="CorrectOptionIndexes"
+                                   value="@i"
+                                   class="form-check-input"
+                                   checked="@Model.CorrectOptionIndexes.Contains(i)" />
+                        </div>
+
+                        <input name="Options[@i]"
+                               value="@Model.Options[i]"
+                               class="form-control"
+                               placeholder="الاختيار @(i + 1)" />
+
+                        <button type="button"
+                                class="btn btn-outline-danger remove-option">
+                            حذف
+                        </button>
+                    </div>
+                }
+            </div>
+
+            <button type="button" id="addOption" class="btn btn-outline-primary mt-2">
+                إضافة اختيار
+            </button>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-success">حفظ التعديلات</button>
+
+            <a asp-action="ManageQuestions"
+               asp-route-examId="@Model.ExamId"
+               class="btn btn-secondary">
+                رجوع
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        const questionType = document.getElementById("questionType");
+        const mcqSection = document.getElementById("mcqSection");
+        const optionsContainer = document.getElementById("optionsContainer");
+        const addOptionButton = document.getElementById("addOption");
+
+        function updateQuestionType() {
+            mcqSection.style.display =
+                questionType.value === "0" ? "block" : "none";
+        }
+
+        function reindexOptions() {
+            const items = optionsContainer.querySelectorAll(".option-item");
+
+            items.forEach((item, index) => {
+                const input = item.querySelector('input:not([type="checkbox"])');
+                const checkbox = item.querySelector('input[type="checkbox"]');
+
+                input.name = `Options[${index}]`;
+                input.placeholder = `الاختيار ${index + 1}`;
+                checkbox.value = index;
+
+                const button = item.querySelector(".remove-option");
+                button.disabled = items.length <= 2;
+            });
+        }
+
+        questionType.addEventListener("change", updateQuestionType);
+        updateQuestionType();
+        reindexOptions();
+
+        addOptionButton.addEventListener("click", function () {
+            const index = optionsContainer.querySelectorAll(".option-item").length;
+
+            const item = document.createElement("div");
+            item.className = "input-group mb-2 option-item";
+
+            item.innerHTML = `
+                <div class="input-group-text">
+                    <input type="checkbox"
+                           name="CorrectOptionIndexes"
+                           value="${index}"
+                           class="form-check-input" />
+                </div>
+
+                <input name="Options[${index}]"
+                       class="form-control"
+                       placeholder="الاختيار ${index + 1}" />
+
+                <button type="button"
+                        class="btn btn-outline-danger remove-option">
+                    حذف
+                </button>
+            `;
+
+            optionsContainer.appendChild(item);
+            reindexOptions();
+        });
+
+        optionsContainer.addEventListener("click", function (event) {
+            if (event.target.classList.contains("remove-option")) {
+                if (optionsContainer.querySelectorAll(".option-item").length > 2) {
+                    event.target.closest(".option-item").remove();
+                    reindexOptions();
+                }
+            }
+        });
+    </script>
+}
