@@ -14,7 +14,7 @@
 | KPI | Target |
 |-----|--------|
 | Milestones delivered on time | All DEPI deadlines |
-| Functional requirements implemented | All must-have requirements (FR-01 to FR-27) |
+| Functional requirements implemented | All must-have requirements (FR-01 to FR-32) |
 | Core services covered by unit tests | Payment approval, MCQ grading, total score |
 | Pull Requests reviewed before merge | 100% |
 | Documentation uploaded to GitHub | 100% of required items |

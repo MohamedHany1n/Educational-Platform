@@ -18,6 +18,12 @@ public class PaymentRequest
 
     public PaymentMethod PaymentMethod { get; set; }
     public string ReceiptImagePath { get; set; } = string.Empty;
+
+    /// <summary>Transaction / reference number written on the receipt. Unique per payment method, so the same receipt cannot be used twice.</summary>
+    public string TransactionNumber { get; set; } = string.Empty;
+
+    /// <summary>The wallet or account number the student paid from (optional).</summary>
+    public string? SenderPhoneNumber { get; set; }
     public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
 
     public int? ReviewedByAdminId { get; set; }

@@ -14,3 +14,4 @@ Likelihood and impact: **L** = Low, **M** = Medium, **H** = High.
 | R8 | Views and controllers not matching (wrong field names, missing validation) | M | M | Use view models, test each page in the browser before opening a Pull Request |
 | R9 | Loss of work or environment problems | L | H | All work pushed to GitHub regularly; README with setup steps |
 | R10 | Low test coverage because of time pressure | M | M | Write tests for the most important services first (payment approval, MCQ grading) |
+| R11 | Fake or reused payment receipts | M | H | The transaction number must be unique per payment method, and the admin reviews every receipt before approving |

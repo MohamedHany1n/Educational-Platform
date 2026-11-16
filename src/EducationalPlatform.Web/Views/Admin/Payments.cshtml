@@ -47,6 +47,7 @@
                             <th>الكورس</th>
                             <th>المبلغ</th>
                             <th>الوسيلة</th>
+                            <th>رقم العملية</th>
                             <th>صورة الإيصال</th>
                             <th>الحالة</th>
                             <th>التاريخ</th>
@@ -65,6 +66,13 @@
                                 <td>@item.Course.Title</td>
                                 <td class="fw-bold">@item.Amount.ToString("N2") ج.م</td>
                                 <td><span class="badge bg-secondary">@item.PaymentMethod</span></td>
+                                <td dir="ltr" style="text-align:right">
+                                    <div class="fw-bold">@item.TransactionNumber</div>
+                                    @if (!string.IsNullOrEmpty(item.SenderPhoneNumber))
+                                    {
+                                        <small class="text-muted">من: @item.SenderPhoneNumber</small>
+                                    }
+                                </td>
                                 <td>
                                     <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#receiptModal-@item.Id">
                                         عرض الإيصال

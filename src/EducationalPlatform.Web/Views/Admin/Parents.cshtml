@@ -1,0 +1,97 @@
+@model List<EducationalPlatform.Web.Models.ViewModels.Admin.ParentListItemViewModel>
+@{
+    ViewData["Title"] = "أولياء الأمور";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>أولياء الأمور</h2>
+    <a asp-action="CreateParent" class="btn btn-primary">+ إضافة ولي أمر</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <p class="text-muted text-center my-4">لا يوجد أولياء أمور مسجلين حتى الآن.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>الاسم</th>
+                            <th>البريد الإلكتروني</th>
+                            <th>رقم الهاتف</th>
+                            <th>عدد الأبناء</th>
+                            <th>الحالة</th>
+                            <th>تاريخ الإنشاء</th>
+                            <th>التحكم</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var parent in Model)
+                        {
+                            <tr>
+                                <td>@parent.Id</td>
+                                <td>@parent.FullName</td>
+                                <td>@parent.Email</td>
+                                <td dir="ltr" style="text-align:right">@(parent.PhoneNumber ?? "-")</td>
+                                <td>
+                                    @if (parent.ChildrenCount == 0)
+                                    {
+                                        <span class="badge bg-warning text-dark">غير مربوط</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-primary">@parent.ChildrenCount</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (parent.IsActive)
+                                    {
+                                        <span class="badge bg-success">نشط</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">موقوف</span>
+                                    }
+                                </td>
+                                <td>@parent.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                                <td>
+                                    <a asp-action="ParentDetails" asp-route-id="@parent.Id" class="btn btn-sm btn-outline-primary">الأبناء والربط</a>
+                                    <form asp-action="ToggleParentStatus" asp-route-id="@parent.Id" method="post" class="d-inline">
+                                        @if (parent.IsActive)
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('هل أنت متأكد من إيقاف حساب ولي الأمر؟')">إيقاف</button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-outline-success">تفعيل</button>
+                                        }
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

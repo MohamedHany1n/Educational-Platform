@@ -12,6 +12,14 @@ public class RegisterViewModel
     [EmailAddress(ErrorMessage = "صيغة البريد الإلكتروني غير صحيحة")]
     public string Email { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "رقم هاتف الطالب مطلوب")]
+    [RegularExpression(@"^01[0125][0-9]{8}$", ErrorMessage = "رقم الهاتف غير صحيح (مثال: 01012345678)")]
+    public string PhoneNumber { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "رقم هاتف ولي الأمر مطلوب")]
+    [RegularExpression(@"^01[0125][0-9]{8}$", ErrorMessage = "رقم الهاتف غير صحيح (مثال: 01012345678)")]
+    public string ParentPhoneNumber { get; set; } = string.Empty;
+
     [Required(ErrorMessage = "كلمة المرور مطلوبة")]
     [MinLength(6, ErrorMessage = "كلمة المرور لا تقل عن 6 أحرف وأرقام")]
     [DataType(DataType.Password)]
@@ -21,7 +29,4 @@ public class RegisterViewModel
     [Compare("Password", ErrorMessage = "كلمة المرور غير متطابقة")]
     [DataType(DataType.Password)]
     public string ConfirmPassword { get; set; } = string.Empty;
-
-    [Required]
-    public string Role { get; set; } = "Student";
 }

@@ -1,10 +1,13 @@
-﻿using EducationalPlatform.Web.Models;
+using EducationalPlatform.Web.Models;
 using EducationalPlatform.Web.Models.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace EducationalPlatform.Web.Controllers;
 
+[AllowAnonymous]
 public class AccountController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -39,25 +42,33 @@ public class AccountController : Controller
             return View(model);
         }
 
+        // Check the password first (this also counts failed attempts), then check the account status.
+        var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: true);
+
+        if (result.IsLockedOut)
+        {
+            ModelState.AddModelError(string.Empty, "تم قفل الحساب مؤقتاً بسبب محاولات دخول خاطئة كثيرة. حاول مرة أخرى بعد قليل.");
+            return View(model);
+        }
+
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, "البريد الإلكتروني أو كلمة المرور غير صحيحة.");
+            return View(model);
+        }
+
         if (!user.IsActive)
         {
             ModelState.AddModelError(string.Empty, "حسابك في انتظار موافقة الإدارة أو تم إيقافه.");
             return View(model);
         }
 
-        var result = await _signInManager.PasswordSignInAsync(
-            user, model.Password, model.RememberMe, lockoutOnFailure: false);
+        await _signInManager.SignInAsync(user, model.RememberMe);
 
-        if (result.Succeeded)
-        {
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                return Redirect(returnUrl);
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
 
-            return RedirectToAction("Index", "Home");
-        }
-
-        ModelState.AddModelError(string.Empty, "البريد الإلكتروني أو كلمة المرور غير صحيحة.");
-        return View(model);
+        return RedirectToAction("Index", "Home");
     }
 
     [HttpGet]
@@ -72,24 +83,36 @@ public class AccountController : Controller
     {
         if (!ModelState.IsValid) return View(model);
 
-        if (model.Role != "Student" && model.Role != "Parent")
+        var phone = model.PhoneNumber.Trim();
+        var parentPhone = model.ParentPhoneNumber.Trim();
+
+        if (phone == parentPhone)
         {
-            ModelState.AddModelError(nameof(model.Role), "نوع الحساب غير مسموح.");
+            ModelState.AddModelError(nameof(model.ParentPhoneNumber), "رقم ولي الأمر يجب أن يختلف عن رقم الطالب.");
             return View(model);
         }
 
+        if (await _userManager.Users.AnyAsync(u => u.PhoneNumber == phone))
+        {
+            ModelState.AddModelError(nameof(model.PhoneNumber), "رقم الهاتف مسجل بالفعل.");
+            return View(model);
+        }
+
+        // Only students register themselves. Parent accounts are created and linked by the admin.
         var user = new ApplicationUser
         {
             UserName = model.Email,
             Email = model.Email,
             FullName = model.FullName,
+            PhoneNumber = phone,
+            ParentPhoneNumber = parentPhone,
             IsActive = false
         };
 
         var result = await _userManager.CreateAsync(user, model.Password);
         if (result.Succeeded)
         {
-            await _userManager.AddToRoleAsync(user, model.Role);
+            await _userManager.AddToRoleAsync(user, "Student");
             TempData["SuccessMessage"] = "تم تسجيل بياناتك بنجاح، حسابك الآن في انتظار موافقة الإدارة.";
             return RedirectToAction(nameof(Login));
         }

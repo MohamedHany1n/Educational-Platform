@@ -39,6 +39,8 @@
                             <th>الاسم بالكامل</th>
                             <th>البريد الإلكتروني</th>
                             <th>نوع الحساب</th>
+                            <th>هاتف الطالب</th>
+                            <th>هاتف ولي الأمر</th>
                             <th>تاريخ التسجيل</th>
                             <th>الإجراءات</th>
                         </tr>
@@ -60,11 +62,17 @@
                                         <span class="badge bg-info text-dark">ولي أمر</span>
                                     }
                                 </td>
+                                <td dir="ltr" style="text-align:right">@(user.PhoneNumber ?? "-")</td>
+                                <td dir="ltr" style="text-align:right">@(user.ParentPhoneNumber ?? "-")</td>
                                 <td>@user.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                 <td>
                                     <form asp-action="ApproveUser" asp-route-id="@user.Id" method="post" class="d-inline">
                                         <button type="submit" class="btn btn-sm btn-success">قبول وتفعيل</button>
                                     </form>
+                                    @if (user.Role == "Student")
+                                    {
+                                        <a asp-action="CreateParent" asp-route-studentId="@user.Id" class="btn btn-sm btn-outline-primary">حساب ولي الأمر</a>
+                                    }
                                     <form asp-action="RejectUser" asp-route-id="@user.Id" method="post" class="d-inline">
                                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('تأكيد رفض وحذف هذا الطلب؟')">رفض</button>
                                     </form>

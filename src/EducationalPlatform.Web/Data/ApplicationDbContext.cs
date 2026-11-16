@@ -33,6 +33,7 @@ public class ApplicationDbContext
         builder.Entity<ApplicationUser>(e =>
         {
             e.Property(u => u.FullName).HasMaxLength(100).IsRequired();
+            e.Property(u => u.ParentPhoneNumber).HasMaxLength(15);
         });
 
         // ---------- Parent <-> Student ----------
@@ -41,6 +42,7 @@ public class ApplicationDbContext
             e.HasKey(x => new { x.ParentId, x.StudentId });
             e.HasOne(x => x.Parent).WithMany(u => u.Children).HasForeignKey(x => x.ParentId);
             e.HasOne(x => x.Student).WithMany(u => u.Parents).HasForeignKey(x => x.StudentId);
+            e.HasOne(x => x.LinkedByAdmin).WithMany().HasForeignKey(x => x.LinkedByAdminId);
         });
 
         // ---------- Courses & Lessons ----------
@@ -75,6 +77,10 @@ public class ApplicationDbContext
             e.Property(p => p.Status).HasConversion<string>().HasMaxLength(20);
             e.Property(p => p.ReceiptImagePath).HasMaxLength(300).IsRequired();
             e.Property(p => p.RejectionReason).HasMaxLength(300);
+            e.Property(p => p.TransactionNumber).HasMaxLength(50).IsRequired();
+            e.Property(p => p.SenderPhoneNumber).HasMaxLength(15);
+            // The same transaction number cannot be submitted twice for the same payment method.
+            e.HasIndex(p => new { p.PaymentMethod, p.TransactionNumber }).IsUnique();
             e.HasOne(p => p.Student).WithMany(u => u.PaymentRequests).HasForeignKey(p => p.StudentId);
             e.HasOne(p => p.Course).WithMany(c => c.PaymentRequests).HasForeignKey(p => p.CourseId);
             e.HasOne(p => p.ReviewedByAdmin).WithMany().HasForeignKey(p => p.ReviewedByAdminId);

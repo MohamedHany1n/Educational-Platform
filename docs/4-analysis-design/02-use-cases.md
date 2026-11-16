@@ -6,7 +6,7 @@
 | Admin | Manages teachers, students, courses, payment requests and reports |
 | Teacher | Creates courses, lessons, exams and grades essay questions |
 | Student | Enrolls in courses, watches lessons, takes exams, views grades |
-| Parent | Follows linked children's progress and grades |
+| Parent | Follows linked children's progress and grades (the account is created and linked by the admin) |
 
 ## 2.2 Use Case Diagram
 
@@ -30,14 +30,15 @@ flowchart LR
         UC9(["Create Exams"])
         UC10(["Grade Essay Questions"])
         UC11(["View Student Results"])
-        UC12(["Register"])
+        UC12(["Register as Student"])
         UC13(["Browse Courses"])
         UC14(["Request Enrollment with Payment Receipt"])
         UC15(["Watch Lessons"])
         UC16(["Take Exam"])
         UC17(["View Grades"])
-        UC18(["Link to Child"])
+        UC18(["Create Parent Account & Link Students"])
         UC19(["View Child Progress and Grades"])
+        UC20(["Approve New Accounts"])
     end
 
     Admin --- UC1
@@ -46,6 +47,8 @@ flowchart LR
     Admin --- UC4
     Admin --- UC5
     Admin --- UC6
+    Admin --- UC20
+    Admin --- UC18
 
     Teacher --- UC1
     Teacher --- UC7
@@ -63,11 +66,10 @@ flowchart LR
     Student --- UC17
 
     Parent --- UC1
-    Parent --- UC18
     Parent --- UC19
 ```
 
-> Relationships: *Watch Lessons* and *Take Exam* **require** an approved enrollment (precondition from *Review Payment Requests*). *Take Exam* is followed by *Grade Essay Questions* when the exam has essay questions.
+> Relationships: *Login* is only possible after *Approve New Accounts* for Students. Parent accounts are created by the admin and start active. *Watch Lessons* and *Take Exam* **require** an approved enrollment (precondition from *Review Payment Requests*). *Take Exam* is followed by *Grade Essay Questions* when the exam has essay questions.
 
 ## 2.3 Use Case Descriptions
 
@@ -88,6 +90,32 @@ flowchart LR
 | Main flow | 1. Admin opens the Pending requests list. 2. Sees student, course, price, payment method and receipt image. 3. Approves the request. 4. System creates an Enrollment and notifies the student. |
 | Alternative | Admin rejects with a reason → request becomes Rejected, student can resubmit |
 | Postcondition | Request status updated; Enrollment created if approved |
+
+### UC-03 Manage Students
+| Field | Description |
+|-------|-------------|
+| Actor | Admin |
+| Precondition | Admin is logged in |
+| Main flow | 1. Admin opens the Students list, searches by name, email or phone, and filters by status (active, pending, suspended, deleted). 2. Opens a student's details page. 3. Edits name, email, phone and parent phone, or suspends / activates the account. |
+| Alternative | Admin deletes the student (soft delete): the student is hidden and cannot log in, but payments, progress and grades are kept. A deleted student can be restored, and returns as suspended. |
+| Postcondition | Student data and status are updated |
+
+### UC-12 Register as Student
+| Field | Description |
+|-------|-------------|
+| Actor | Student |
+| Precondition | None |
+| Main flow | 1. Student enters name, email, password, own phone number and parent's phone number. 2. System checks the data: phone format 01xxxxxxxxx, student and parent phones are different, email and phone are not already used. 3. System creates an inactive Student account. |
+| Postcondition | The account waits for admin approval (UC-20). The admin later uses the parent's phone number to create and link the parent account (UC-18) |
+
+### UC-20 Approve New Accounts
+| Field | Description |
+|-------|-------------|
+| Actor | Admin |
+| Precondition | At least one Student has registered and is waiting |
+| Main flow | 1. Admin opens the Pending Users list. 2. Sees name, email, phone, parent phone and registration date. 3. Approves the account, which becomes active, and the approval time is saved. |
+| Alternative | Admin rejects the request → the account request is deleted, together with any parent link |
+| Postcondition | Approved students can log in. An approved student who is later suspended never returns to the pending list |
 
 ### UC-06 View Reports
 | Field | Description |
@@ -151,11 +179,14 @@ flowchart LR
 | Actor | Student |
 | Main flow | Student sees the list of exams with score, total and teacher feedback. |
 
-### UC-18 Link to Child
+### UC-18 Create Parent Account & Link Students
 | Field | Description |
 |-------|-------------|
-| Actor | Parent |
-| Main flow | Parent registers and links to a student account using the student's email/code; the link is stored in ParentStudent. |
+| Actor | Admin |
+| Precondition | A student account exists |
+| Main flow | 1. Admin opens the Parents page, or opens Create Parent from a student. 2. The parent phone number entered by the student is pre-filled. 3. Admin enters the parent's name, email and password. 4. System creates an active Parent account and links it to the student; the admin and the time are stored in ParentStudent. |
+| Alternative | If a parent account with the same phone already exists, the admin links the student to that account. The admin can link more students, unlink a student, or suspend / activate the parent. |
+| Postcondition | The parent can log in and follow the linked children (UC-19) |
 
 ### UC-19 View Child Progress and Grades
 | Field | Description |

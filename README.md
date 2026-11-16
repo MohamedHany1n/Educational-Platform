@@ -59,7 +59,11 @@ To run the website:
     dotnet ef database update
     dotnet run
 
-Set your connection string with User Secrets, not in appsettings.json.
+Set your connection string and the first admin account with User Secrets, never in appsettings.json:
+
+    dotnet user-secrets set "ConnectionStrings:DefaultConnection" "<your connection string>"
+    dotnet user-secrets set "SeedAdmin:Email" "<admin email>"
+    dotnet user-secrets set "SeedAdmin:Password" "<admin password>"
 
 ## Documentation
 
