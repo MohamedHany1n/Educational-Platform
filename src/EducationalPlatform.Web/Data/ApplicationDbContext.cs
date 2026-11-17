@@ -25,6 +25,7 @@ public class ApplicationDbContext
     public DbSet<ExamAttempt> ExamAttempts => Set<ExamAttempt>();
     public DbSet<AttemptAnswer> AttemptAnswers => Set<AttemptAnswer>();
 
+    public DbSet<AttemptAnswerOption> AttemptAnswerOptions => Set<AttemptAnswerOption>();
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -192,11 +193,30 @@ public class ApplicationDbContext
             e.HasOne(a => a.Attempt).WithMany(x => x.Answers)
                 .HasForeignKey(a => a.AttemptId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(a => a.Question).WithMany().HasForeignKey(a => a.QuestionId);
-            e.HasOne(a => a.SelectedOption).WithMany().HasForeignKey(a => a.SelectedOptionId);
+            
             e.HasIndex(a => new
             {
                 a.AttemptId,
                 a.QuestionId
+            }).IsUnique();
+        });
+
+        builder.Entity<AttemptAnswerOption>(e =>
+        {
+            e.HasOne(x => x.AttemptAnswer)
+                .WithMany(a => a.SelectedOptions)
+                .HasForeignKey(x => x.AttemptAnswerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(x => x.QuestionOption)
+                .WithMany()
+                .HasForeignKey(x => x.QuestionOptionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasIndex(x => new
+            {
+                x.AttemptAnswerId,
+                x.QuestionOptionId
             }).IsUnique();
         });
 
@@ -208,7 +228,8 @@ public class ApplicationDbContext
             (typeof(Lesson), typeof(Course)),
             (typeof(Question), typeof(Exam)),
             (typeof(QuestionOption), typeof(Question)),
-            (typeof(AttemptAnswer), typeof(ExamAttempt))
+            (typeof(AttemptAnswer), typeof(ExamAttempt)),
+            (typeof(AttemptAnswerOption), typeof(AttemptAnswer))
         };
 
         foreach (var fk in builder.Model.GetEntityTypes()

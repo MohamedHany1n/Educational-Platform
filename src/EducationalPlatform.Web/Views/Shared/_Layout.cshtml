@@ -76,6 +76,11 @@
                             {
                               <li class="nav-item">
                                 <a class="nav-link fw-bold text-primary"  asp-controller="StudentExams" asp-action="Available"> الامتحانات </a> </li>
+                                <li class="nav-item">
+                                        <a class="nav-link fw-bold text-danger" asp-controller="StudentExams" asp-action="History">
+                                            My Attempts
+                                        </a>
+                                    </li>
                              }
                             <li class="nav-item">
                                 <span class="nav-link text-dark">مرحباً، @User.Identity.Name</span>
