@@ -45,10 +45,12 @@
 
                             @if (exam.AttemptsUsed < exam.MaxAttempts)
                             {
-                                <button class="btn btn-primary w-100" disabled>
-                                    بدء الامتحان (قريبًا)
-                                </button>
-                            }
+                                <a asp-action="Details"
+                                   asp-route-id="@exam.Id"
+                                   class="btn btn-primary">
+                                    تفاصيل الامتحان
+                                </a>
+                                    }
                             else
                             {
                                 <button class="btn btn-secondary w-100" disabled>

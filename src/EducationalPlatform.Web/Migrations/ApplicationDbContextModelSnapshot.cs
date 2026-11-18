@@ -131,9 +131,6 @@ namespace EducationalPlatform.Web.Migrations
                     b.Property<decimal?>("Score")
                         .HasColumnType("decimal(5,2)");
 
-                    b.Property<int?>("SelectedOptionId")
-                        .HasColumnType("int");
-
                     b.Property<string>("TeacherFeedback")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -142,12 +139,34 @@ namespace EducationalPlatform.Web.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.HasIndex("SelectedOptionId");
-
                     b.HasIndex("AttemptId", "QuestionId")
                         .IsUnique();
 
                     b.ToTable("AttemptAnswers");
+                });
+
+            modelBuilder.Entity("EducationalPlatform.Web.Models.AttemptAnswerOption", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AttemptAnswerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuestionOptionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionOptionId");
+
+                    b.HasIndex("AttemptAnswerId", "QuestionOptionId")
+                        .IsUnique();
+
+                    b.ToTable("AttemptAnswerOptions");
                 });
 
             modelBuilder.Entity("EducationalPlatform.Web.Models.Course", b =>
@@ -660,16 +679,28 @@ namespace EducationalPlatform.Web.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("EducationalPlatform.Web.Models.QuestionOption", "SelectedOption")
-                        .WithMany()
-                        .HasForeignKey("SelectedOptionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("Attempt");
 
                     b.Navigation("Question");
+                });
 
-                    b.Navigation("SelectedOption");
+            modelBuilder.Entity("EducationalPlatform.Web.Models.AttemptAnswerOption", b =>
+                {
+                    b.HasOne("EducationalPlatform.Web.Models.AttemptAnswer", "AttemptAnswer")
+                        .WithMany("SelectedOptions")
+                        .HasForeignKey("AttemptAnswerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EducationalPlatform.Web.Models.QuestionOption", "QuestionOption")
+                        .WithMany()
+                        .HasForeignKey("QuestionOptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AttemptAnswer");
+
+                    b.Navigation("QuestionOption");
                 });
 
             modelBuilder.Entity("EducationalPlatform.Web.Models.Course", b =>
@@ -910,6 +941,11 @@ namespace EducationalPlatform.Web.Migrations
                     b.Navigation("Parents");
 
                     b.Navigation("PaymentRequests");
+                });
+
+            modelBuilder.Entity("EducationalPlatform.Web.Models.AttemptAnswer", b =>
+                {
+                    b.Navigation("SelectedOptions");
                 });
 
             modelBuilder.Entity("EducationalPlatform.Web.Models.Course", b =>

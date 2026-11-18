@@ -1,0 +1,274 @@
+﻿@model EducationalPlatform.Web.ViewModels.TakeExamViewModel
+
+@{
+    ViewData["Title"] = "حل الامتحان";
+}
+
+<div class="container mt-4" dir="rtl">
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <h2>@Model.ExamTitle</h2>
+
+                <div class="text-center">
+                    <small class="text-muted d-block">الوقت المتبقي</small>
+                    <h3 id="timer" class="text-danger mb-0">--:--</h3>
+                </div>
+            </div>
+
+            <p class="text-muted mb-0 mt-2">
+                مدة الامتحان: @Model.DurationMinutes دقيقة
+            </p>
+
+            <small id="saveStatus" class="text-muted">
+                الإجابات تُحفظ تلقائيًا
+            </small>
+        </div>
+    </div>
+
+    <form id="examForm"
+          asp-action="Submit"
+          asp-route-id="@Model.AttemptId"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        @for (int i = 0; i < Model.Questions.Count; i++)
+        {
+            var question = Model.Questions[i];
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+
+                    <h5 class="mb-3">
+                        السؤال @(i + 1)
+                    </h5>
+
+                    <p>@question.Text</p>
+
+                    <small class="text-muted">
+                        الدرجة: @question.Marks
+                    </small>
+
+                    <input type="hidden"
+                           name="Answers[@i].QuestionId"
+                           value="@question.Id" />
+
+                    @if (question.Type == "MCQ")
+                    {
+                        <div class="mt-3">
+                            @foreach (var option in question.Options)
+                            {
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input mcq-option"
+                                           type="checkbox"
+                                           name="Answers[@i].SelectedOptionIds"
+                                           value="@option.Id"
+                                           data-question-id="@question.Id" />
+
+                                    <label class="form-check-label">
+                                        @option.Text
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (question.Type == "Essay")
+                    {
+                        <textarea class="form-control mt-3 essay-answer"
+                                  name="Answers[@i].EssayText"
+                                  data-question-id="@question.Id"
+                                  rows="5"
+                                  placeholder="اكتب إجابتك هنا..."></textarea>
+                    }
+
+                </div>
+            </div>
+        }
+
+        <div class="text-center mb-5">
+            <button id="submitButton"
+                    type="submit"
+                    class="btn btn-success btn-lg">
+                تسليم الامتحان
+            </button>
+        </div>
+
+    </form>
+
+</div>
+
+@section Scripts {
+    <script>
+        const form = document.getElementById("examForm");
+        const timerElement = document.getElementById("timer");
+        const saveStatus = document.getElementById("saveStatus");
+        const submitButton = document.getElementById("submitButton");
+
+        const saveAnswerUrl = '@Url.Action("SaveAnswer", "StudentExams", new { id = Model.AttemptId })';
+
+        const token = form.querySelector(
+            'input[name="__RequestVerificationToken"]'
+        ).value;
+
+        const startedAt = new Date(
+            "@DateTime.SpecifyKind(Model.StartedAt, DateTimeKind.Utc).ToString("o")"
+        );
+        const durationMs = @Model.DurationMinutes * 60 * 1000;
+        const expiresAt = startedAt.getTime() + durationMs;
+
+        const essayTimers = new Map();
+        const pendingSaves = new Set();
+
+        let submitting = false;
+
+        async function saveAnswer(questionId, data) {
+            const params = new URLSearchParams();
+
+            params.append("QuestionId", questionId);
+
+            if (data.type === "MCQ") {
+                data.selectedIds.forEach(id => {
+                    params.append("SelectedOptionIds", id);
+                });
+            } else {
+                params.append("EssayText", data.text);
+            }
+
+            saveStatus.textContent = "جاري حفظ الإجابة...";
+
+            const request = fetch(saveAnswerUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "RequestVerificationToken": token
+                },
+                body: params
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Save failed");
+                    }
+
+                    saveStatus.textContent = "تم حفظ الإجابة";
+                })
+                .catch(() => {
+                    saveStatus.textContent = "تعذر حفظ الإجابة، حاول مرة أخرى";
+                });
+
+            pendingSaves.add(request);
+
+            try {
+                await request;
+            } finally {
+                pendingSaves.delete(request);
+            }
+        }
+
+        // Save MCQ answers whenever a checkbox changes.
+        document.querySelectorAll(".mcq-option").forEach(input => {
+            input.addEventListener("change", () => {
+                const questionId = input.dataset.questionId;
+
+                const selectedIds = Array.from(
+                    document.querySelectorAll(
+                        `.mcq-option[data-question-id="${questionId}"]:checked`
+                    )
+                ).map(option => option.value);
+
+                saveAnswer(questionId, {
+                    type: "MCQ",
+                    selectedIds
+                });
+            });
+        });
+
+        // Save Essay answers after the student stops typing.
+        document.querySelectorAll(".essay-answer").forEach(textarea => {
+            textarea.addEventListener("input", () => {
+                const questionId = textarea.dataset.questionId;
+
+                clearTimeout(essayTimers.get(questionId));
+
+                const timer = setTimeout(() => {
+                    saveAnswer(questionId, {
+                        type: "Essay",
+                        text: textarea.value
+                    });
+                }, 700);
+
+                essayTimers.set(questionId, timer);
+            });
+        });
+
+        // Countdown timer.
+        async function updateTimer() {
+            const remaining = Math.max(
+                0,
+                Math.ceil((expiresAt - Date.now()) / 1000)
+            );
+
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+
+            timerElement.textContent =
+                `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+            if (remaining <= 0) {
+                clearInterval(timerInterval);
+
+                if (!submitting) {
+                    submitting = true;
+                    submitButton.disabled = true;
+
+                    saveStatus.textContent =
+                        "انتهى الوقت، جاري تسليم الامتحان...";
+
+                    // Cancel pending debounce timers.
+                    essayTimers.forEach(timer => clearTimeout(timer));
+                    essayTimers.clear();
+
+                    // Wait for already-running autosave requests.
+                    await Promise.all([...pendingSaves]);
+
+                    // Submit directly without triggering the submit handler again.
+                    form.submit();
+                }
+            }
+        }
+
+        updateTimer();
+
+        const timerInterval = setInterval(updateTimer, 1000);
+
+        // Flush pending Essay saves before manual submission.
+        form.addEventListener("submit", async event => {
+            if (submitting) {
+                return;
+            }
+
+            event.preventDefault();
+
+            submitting = true;
+            submitButton.disabled = true;
+
+            essayTimers.forEach(timer => clearTimeout(timer));
+            essayTimers.clear();
+
+            const essaySaves = Array.from(
+                document.querySelectorAll(".essay-answer")
+            ).map(textarea =>
+                saveAnswer(textarea.dataset.questionId, {
+                    type: "Essay",
+                    text: textarea.value
+                })
+            );
+
+            await Promise.all(essaySaves);
+            await Promise.all([...pendingSaves]);
+
+            form.submit();
+        });
+    </script>
+}

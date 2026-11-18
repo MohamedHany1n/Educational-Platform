@@ -11,8 +11,8 @@ public class AttemptAnswer
     public Question Question { get; set; } = null!;
 
     /// <summary>Chosen option (MCQ questions only).</summary>
-    public int? SelectedOptionId { get; set; }
-    public QuestionOption? SelectedOption { get; set; }
+
+    // MCQ answers are stored in SelectedOptions.
 
     /// <summary>Written answer (Essay questions only).</summary>
     public string? EssayText { get; set; }
@@ -20,4 +20,7 @@ public class AttemptAnswer
     /// <summary>Null until the answer is graded.</summary>
     public decimal? Score { get; set; }
     public string? TeacherFeedback { get; set; }
+
+    public ICollection<AttemptAnswerOption> SelectedOptions { get; set; }
+    = new List<AttemptAnswerOption>();
 }
