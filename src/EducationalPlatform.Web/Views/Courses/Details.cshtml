@@ -1,6 +1,9 @@
+@inject IConfiguration Configuration
 @model EducationalPlatform.Web.Models.ViewModels.Student.CourseDetailsViewModel
 @{
     ViewData["Title"] = Model.Title;
+    var paymentConfigured = !string.IsNullOrWhiteSpace(Configuration["PaymentInfo:InstaPay"])
+        || !string.IsNullOrWhiteSpace(Configuration["PaymentInfo:VodafoneCash"]);
 }
 
 @if (TempData["ErrorMessage"] != null)
@@ -26,6 +29,11 @@
         else if (Model.HasPendingRequest)
         {
             <div class="alert alert-warning mb-0">لديك طلب دفع قيد المراجعة لهذا الكورس. <a asp-controller="Payments" asp-action="Mine">عرض طلباتي</a></div>
+        }
+        else if (!paymentConfigured)
+        {
+            <button type="button" class="btn btn-secondary btn-lg" disabled>الاشتراك غير متاح حالياً</button>
+            <p class="text-muted mt-2 mb-0">لم تُعلن حسابات الدفع بعد.</p>
         }
         else
         {

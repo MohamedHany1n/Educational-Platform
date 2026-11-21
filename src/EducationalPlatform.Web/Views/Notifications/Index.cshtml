@@ -3,6 +3,11 @@
     ViewData["Title"] = "الإشعارات";
 }
 
+@* Opening this page marks everything read via an explicit antiforgery POST, not a GET mutation. *@
+<form id="markAllReadForm" asp-action="MarkAllRead" method="post" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
 <h2 class="mb-4">الإشعارات</h2>
 
 <div class="card shadow-sm">
@@ -32,3 +37,12 @@
         }
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        @if (Model.Any(n => !n.IsRead))
+        {
+            <text>document.getElementById('markAllReadForm').submit();</text>
+        }
+    </script>
+}

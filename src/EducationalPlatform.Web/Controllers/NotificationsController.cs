@@ -22,7 +22,15 @@ public class NotificationsController : Controller
     public async Task<IActionResult> Index()
     {
         var notifications = await _notificationService.GetForUserAsync(UserId);
-        await _notificationService.MarkAllReadAsync(UserId);
         return View(notifications);
+    }
+
+    /// <summary>Explicit state change: marks all of the current user's notifications read.</summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkAllRead()
+    {
+        await _notificationService.MarkAllReadAsync(UserId);
+        return RedirectToAction(nameof(Index));
     }
 }

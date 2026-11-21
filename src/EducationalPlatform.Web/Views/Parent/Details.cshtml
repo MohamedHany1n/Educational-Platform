@@ -44,7 +44,7 @@ else
                             <li class="list-group-item d-flex justify-content-between align-items-center px-0">
                                 <span>@grade.ExamTitle</span>
                                 <span>
-                                    <strong>@(grade.Score?.ToString("0.##") ?? "-")</strong> / @grade.TotalMarks.ToString("0.##")
+                                    الدرجة: <strong dir="ltr">@(grade.Score?.ToString("0.##") ?? "-") / @grade.TotalMarks.ToString("0.##")</strong>
                                     @if (grade.SubmittedAt.HasValue)
                                     {
                                         <small class="text-muted me-2">@grade.SubmittedAt.Value.ToLocalTime().ToString("yyyy/MM/dd")</small>
