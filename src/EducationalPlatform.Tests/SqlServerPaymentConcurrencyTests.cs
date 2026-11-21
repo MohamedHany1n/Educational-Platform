@@ -23,28 +23,57 @@ namespace EducationalPlatform.Tests;
 ///
 /// Each run creates its own scratch database (EducationalPlatformRaceTest_...)
 /// and deletes it afterwards; it never touches an existing database. When the
-/// environment variable is absent the tests return immediately, so the suite
-/// stays green on machines without SQL Server.
+/// environment variable is absent every test reports as SKIPPED with the
+/// reason, never as a pass, so a green run means the tests actually executed.
 /// </summary>
 public class SqlServerPaymentConcurrencyTests
 {
     private static string? BaseConnectionString
         => Environment.GetEnvironmentVariable("EDU_PLATFORM_TEST_SQLSERVER");
 
+    /// <summary>Skips with an explicit reason unless the connection string is configured.</summary>
+    private sealed class SqlServerFactAttribute : FactAttribute
+    {
+        public SqlServerFactAttribute()
+        {
+            if (BaseConnectionString is null)
+                Skip = "Set EDU_PLATFORM_TEST_SQLSERVER to a SQL Server connection string to run this provider test.";
+        }
+    }
+
     private sealed class ScratchDatabase : IDisposable
     {
+        private readonly string _masterConnectionString;
+        private bool _created;
+
         public string Name { get; } = $"EducationalPlatformRaceTest_{Guid.NewGuid():N}";
         public string ConnectionString { get; }
 
         public ScratchDatabase(string baseConnectionString)
         {
-            ConnectionString = new SqlConnectionStringBuilder(baseConnectionString)
+            var builder = new SqlConnectionStringBuilder(baseConnectionString);
+            _masterConnectionString = new SqlConnectionStringBuilder(baseConnectionString)
             {
-                InitialCatalog = Name
+                InitialCatalog = "master"
             }.ConnectionString;
+            builder.InitialCatalog = Name;
+            ConnectionString = builder.ConnectionString;
 
-            using var context = CreateContext();
-            context.Database.EnsureCreated();
+            // Refuse to reuse any preexisting database of the same name, so the
+            // drop on Dispose can only ever remove the scratch database this
+            // object itself created.
+            using (var master = new SqlConnection(_masterConnectionString))
+            {
+                master.Open();
+                using var check = new SqlCommand("SELECT COUNT(*) FROM sys.databases WHERE name = @name", master);
+                check.Parameters.AddWithValue("@name", Name);
+                if ((int)check.ExecuteScalar()! != 0)
+                    throw new InvalidOperationException($"Refusing to reuse existing database '{Name}'.");
+            }
+
+            using (var context = CreateContext())
+                context.Database.Migrate(); // applies the real migrations, creating the scratch DB
+            _created = true;
         }
 
         public ApplicationDbContext CreateContext()
@@ -57,6 +86,8 @@ public class SqlServerPaymentConcurrencyTests
 
         public void Dispose()
         {
+            if (!_created)
+                return; // never drop anything this object did not create
             try
             {
                 using var context = CreateContext();
@@ -102,11 +133,10 @@ public class SqlServerPaymentConcurrencyTests
         return (await firstTask, await secondTask);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task SqlServer_ConcurrentApprove_SameRequest_ExactlyOneSucceeds()
     {
-        if (BaseConnectionString is not { } cs) return;
-        using var db = new ScratchDatabase(cs);
+        using var db = new ScratchDatabase(BaseConnectionString!);
         int paymentId;
         await using (var seedContext = db.CreateContext())
             paymentId = Seed(seedContext, "TXN-1").paymentId;
@@ -121,7 +151,8 @@ public class SqlServerPaymentConcurrencyTests
             () => repo2.ApprovePaymentAsync(paymentId, adminId: 2));
 
         var results = new[] { first, second };
-        Assert.Single(results.Where(r => r.Success));
+        Assert.True(results.Count(r => r.Success) == 1,
+            $"Expected exactly one successful approval; actual: first={first}, second={second}.");
         Assert.Equal("تمت مراجعة هذا الطلب مسبقاً.", results.Single(r => !r.Success).Message);
 
         await using var readContext = db.CreateContext();
@@ -130,11 +161,10 @@ public class SqlServerPaymentConcurrencyTests
         Assert.Equal(1, await readContext.Enrollments.CountAsync());
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task SqlServer_ConcurrentApproveAndReject_SameRequest_ExactlyOneWins()
     {
-        if (BaseConnectionString is not { } cs) return;
-        using var db = new ScratchDatabase(cs);
+        using var db = new ScratchDatabase(BaseConnectionString!);
         int paymentId;
         await using (var seedContext = db.CreateContext())
             paymentId = Seed(seedContext, "TXN-1").paymentId;
@@ -148,7 +178,8 @@ public class SqlServerPaymentConcurrencyTests
             () => approver.ApprovePaymentAsync(paymentId, adminId: 1),
             () => rejecter.RejectPaymentAsync(paymentId, adminId: 2, "إيصال غير صحيح"));
 
-        Assert.NotEqual(approveResult.Success, rejectResult.Success);
+        Assert.True(approveResult.Success != rejectResult.Success,
+            $"Expected exactly one winner; actual: approve={approveResult}, reject={rejectResult}.");
         var loser = approveResult.Success ? rejectResult : approveResult;
         Assert.Equal("تمت مراجعة هذا الطلب مسبقاً.", loser.Message);
 
@@ -167,11 +198,10 @@ public class SqlServerPaymentConcurrencyTests
         }
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task SqlServer_ConcurrentApprove_TwoRequestsSameCourse_ExactlyOneApprovalAndLoserRollsBack()
     {
-        if (BaseConnectionString is not { } cs) return;
-        using var db = new ScratchDatabase(cs);
+        using var db = new ScratchDatabase(BaseConnectionString!);
         int firstPaymentId, secondPaymentId;
         await using (var seedContext = db.CreateContext())
         {
@@ -202,7 +232,8 @@ public class SqlServerPaymentConcurrencyTests
             () => repo2.ApprovePaymentAsync(secondPaymentId, adminId: 2));
 
         var results = new[] { first, second };
-        Assert.Single(results.Where(r => r.Success));
+        Assert.True(results.Count(r => r.Success) == 1,
+            $"Expected exactly one successful approval; actual: first={first}, second={second}.");
         Assert.Equal("الطالب مشترك بالفعل في هذا الكورس.", results.Single(r => !r.Success).Message);
 
         // The loser must have rolled its approval back to Pending: this is the
@@ -216,11 +247,10 @@ public class SqlServerPaymentConcurrencyTests
         Assert.Equal(1, await readContext.Enrollments.CountAsync());
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task SqlServer_DuplicateEnrollment_Throws2601Or2627MatchingIsUniqueViolation()
     {
-        if (BaseConnectionString is not { } cs) return;
-        using var db = new ScratchDatabase(cs);
+        using var db = new ScratchDatabase(BaseConnectionString!);
         await using var context = db.CreateContext();
         var (studentId, courseId, paymentId) = Seed(context, "TXN-1");
 
