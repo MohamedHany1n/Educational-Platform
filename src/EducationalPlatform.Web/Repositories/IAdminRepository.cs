@@ -19,6 +19,7 @@ public interface IAdminRepository
     Task<(List<StudentListItemViewModel> Items, int TotalCount)> GetStudentsAsync(string? search, string? status, int page, int pageSize);
     Task<StudentDetailsViewModel?> GetStudentDetailsAsync(int studentId);
     Task<List<PaymentRequest>> GetPaymentRequestsAsync(PaymentStatus? status = null);
+    Task<List<PaymentRequest>> GetRecentPaymentRequestsAsync(PaymentStatus status, int take);
     Task<PaymentRequest?> GetPaymentRequestByIdAsync(int id);
     Task<(bool Success, string Message)> ApprovePaymentAsync(int paymentRequestId, int adminId);
     Task<(bool Success, string Message)> RejectPaymentAsync(int paymentRequestId, int adminId, string rejectionReason);

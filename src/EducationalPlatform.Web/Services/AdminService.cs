@@ -1,8 +1,10 @@
-using EducationalPlatform.Web.Models;
+﻿using EducationalPlatform.Web.Models;
 using EducationalPlatform.Web.Models.Enums;
 using EducationalPlatform.Web.Models.ViewModels.Admin;
 using EducationalPlatform.Web.Repositories;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace EducationalPlatform.Web.Services;
 
@@ -23,16 +25,16 @@ public class AdminService : IAdminService
     {
         var teachers = await _userManager.GetUsersInRoleAsync("Teacher");
         var students = await _userManager.GetUsersInRoleAsync("Student");
-        var pendingPayments = await _adminRepository.GetPaymentRequestsAsync(PaymentStatus.Pending);
+        var recentPending = await _adminRepository.GetRecentPaymentRequestsAsync(PaymentStatus.Pending, 5);
 
         return new AdminDashboardViewModel
         {
-            TotalTeachers = teachers.Count,
+            TotalTeachers = teachers.Count(t => t.IsActive && !t.IsDeleted),
             TotalStudents = students.Count(s => s.IsActive && !s.IsDeleted),
             TotalCourses = await _adminRepository.GetCoursesCountAsync(),
-            PendingPaymentsCount = pendingPayments.Count,
+            PendingPaymentsCount = await _adminRepository.GetPendingPaymentsCountAsync(),
             TotalApprovedRevenue = await _adminRepository.GetTotalApprovedRevenueAsync(),
-            RecentPendingPayments = pendingPayments.Take(5).ToList()
+            RecentPendingPayments = recentPending
         };
     }
 
@@ -64,18 +66,33 @@ public class AdminService : IAdminService
             return (false, new[] { "هذا البريد الإلكتروني مستخدم بالفعل." });
         }
 
+        var phone = string.IsNullOrWhiteSpace(model.PhoneNumber) ? null : model.PhoneNumber.Trim();
+        if (phone != null && await _userManager.Users.AnyAsync(u => u.PhoneNumber == phone))
+        {
+            return (false, new[] { "رقم الهاتف مسجل بالفعل لحساب آخر." });
+        }
+
         var teacher = new ApplicationUser
         {
             UserName = model.Email,
             Email = model.Email,
             FullName = model.FullName,
-            PhoneNumber = model.PhoneNumber,
+            PhoneNumber = phone,
             EmailConfirmed = true,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
 
-        var result = await _userManager.CreateAsync(teacher, model.Password);
+        IdentityResult result;
+        try
+        {
+            result = await _userManager.CreateAsync(teacher, model.Password);
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            return (false, new[] { "رقم الهاتف مسجل بالفعل لحساب آخر." });
+        }
+
         if (!result.Succeeded)
         {
             return (false, result.Errors.Select(e => e.Description));
@@ -188,7 +205,16 @@ public class AdminService : IAdminService
             CreatedAt = DateTime.UtcNow
         };
 
-        var result = await _userManager.CreateAsync(parent, model.Password);
+        IdentityResult result;
+        try
+        {
+            result = await _userManager.CreateAsync(parent, model.Password);
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            return (false, new[] { "رقم الهاتف مسجل بالفعل لحساب آخر." }, null);
+        }
+
         if (!result.Succeeded)
             return (false, result.Errors.Select(e => e.Description), null);
 
@@ -357,7 +383,16 @@ public class AdminService : IAdminService
         student.PhoneNumber = phone;
         student.ParentPhoneNumber = parentPhone;
 
-        var result = await _userManager.UpdateAsync(student);
+        IdentityResult result;
+        try
+        {
+            result = await _userManager.UpdateAsync(student);
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            return (false, new[] { "رقم الهاتف مسجل بالفعل لحساب آخر." });
+        }
+
         return result.Succeeded
             ? (true, Enumerable.Empty<string>())
             : (false, result.Errors.Select(e => e.Description));
@@ -418,6 +453,9 @@ public class AdminService : IAdminService
 
         return (true, $"تم استرجاع الطالب ({student.FullName}) وهو موقوف حالياً، فعّل الحساب عندما تريد.");
     }
+
+    private static bool IsUniqueViolation(DbUpdateException ex)
+        => ex.InnerException is SqlException { Number: 2601 or 2627 };
 
     private async Task<ApplicationUser?> GetStudentUserAsync(int studentId)
     {

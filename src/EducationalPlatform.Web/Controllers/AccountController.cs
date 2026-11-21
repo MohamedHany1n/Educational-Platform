@@ -1,8 +1,9 @@
-using EducationalPlatform.Web.Models;
+﻿using EducationalPlatform.Web.Models;
 using EducationalPlatform.Web.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace EducationalPlatform.Web.Controllers;
@@ -109,7 +110,19 @@ public class AccountController : Controller
             IsActive = false
         };
 
-        var result = await _userManager.CreateAsync(user, model.Password);
+        IdentityResult result;
+        try
+        {
+            result = await _userManager.CreateAsync(user, model.Password);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is SqlException { Number: 2601 or 2627 })
+        {
+            // The unique phone index caught a race: another account took this number
+            // between the check above and the insert.
+            ModelState.AddModelError(nameof(model.PhoneNumber), "رقم الهاتف مسجل بالفعل.");
+            return View(model);
+        }
+
         if (result.Succeeded)
         {
             await _userManager.AddToRoleAsync(user, "Student");
