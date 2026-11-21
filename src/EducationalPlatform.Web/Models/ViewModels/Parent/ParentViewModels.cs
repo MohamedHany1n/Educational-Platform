@@ -25,6 +25,7 @@ public class ParentChildCourseProgressViewModel
     public int TotalLessons { get; set; }
     public int CompletedLessons { get; set; }
     public List<ParentChildExamGradeViewModel> Grades { get; set; } = new();
+    public int PendingGradingCount { get; set; }
 }
 
 public class ParentChildExamGradeViewModel

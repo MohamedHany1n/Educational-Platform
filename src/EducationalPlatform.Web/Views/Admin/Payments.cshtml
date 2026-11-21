@@ -87,7 +87,14 @@
                                                 </div>
                                                 <div class="modal-body text-center">
                                                     @* Receipts are private files served through the authorized action, never wwwroot. *@
-                                                    <img src="@Url.Action("Receipt", "Payments", new { id = item.Id })" alt="Receipt" class="img-fluid rounded border" />
+                                                    @if ((item.ReceiptImagePath ?? "").EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                                                    {
+                                                        <a href="@Url.Action("Receipt", "Payments", new { id = item.Id })" target="_blank" class="btn btn-outline-primary">فتح إيصال PDF</a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <img src="@Url.Action("Receipt", "Payments", new { id = item.Id })" alt="Receipt" class="img-fluid rounded border" />
+                                                    }
                                                 </div>
                                             </div>
                                         </div>

@@ -16,13 +16,24 @@ public class PaymentsController : Controller
     private readonly IStudentService _studentService;
     private readonly IReceiptStorage _receiptStorage;
     private readonly ApplicationDbContext _context;
+    private readonly IConfiguration _configuration;
 
-    public PaymentsController(IStudentService studentService, IReceiptStorage receiptStorage, ApplicationDbContext context)
+    public PaymentsController(IStudentService studentService, IReceiptStorage receiptStorage, ApplicationDbContext context, IConfiguration configuration)
     {
         _studentService = studentService;
         _receiptStorage = receiptStorage;
         _context = context;
+        _configuration = configuration;
     }
+
+    /// <summary>
+    /// True only when at least one real payment destination is configured.
+    /// Asking a student to pay an unspecified destination would collect
+    /// unverifiable receipts, so the flow blocks instead.
+    /// </summary>
+    private bool PaymentDestinationConfigured()
+        => !string.IsNullOrWhiteSpace(_configuration["PaymentInfo:InstaPay"])
+        || !string.IsNullOrWhiteSpace(_configuration["PaymentInfo:VodafoneCash"]);
 
     private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
@@ -43,6 +54,11 @@ public class PaymentsController : Controller
             TempData["ErrorMessage"] = "لديك طلب دفع معلّق لهذا الكورس بالفعل.";
             return RedirectToAction(nameof(Mine));
         }
+        if (!PaymentDestinationConfigured())
+        {
+            TempData["ErrorMessage"] = "الاشتراك غير متاح حالياً: لم تُعلن حسابات الدفع بعد.";
+            return RedirectToAction("Details", "Courses", new { id = courseId });
+        }
 
         ViewBag.Course = course;
         return View(new SubmitPaymentViewModel { CourseId = courseId });
@@ -56,6 +72,11 @@ public class PaymentsController : Controller
         var course = await _studentService.GetCourseDetailsAsync(model.CourseId, UserId);
         if (course == null)
             return NotFound();
+        if (!PaymentDestinationConfigured())
+        {
+            TempData["ErrorMessage"] = "الاشتراك غير متاح حالياً: لم تُعلن حسابات الدفع بعد.";
+            return RedirectToAction("Details", "Courses", new { id = model.CourseId });
+        }
 
         if (!ModelState.IsValid || receipt == null || receipt.Length == 0)
         {

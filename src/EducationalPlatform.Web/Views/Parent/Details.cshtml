@@ -28,9 +28,13 @@ else
                 </div>
 
                 <h6>درجات الامتحانات:</h6>
+                @if (course.PendingGradingCount > 0)
+                {
+                    <p class="text-muted small">@course.PendingGradingCount امتحان قيد التصحيح، ستظهر درجته عند اكتمال التصحيح.</p>
+                }
                 @if (!course.Grades.Any())
                 {
-                    <p class="text-muted small mb-0">لا توجد امتحانات مسلّمة بعد.</p>
+                    <p class="text-muted small mb-0">لا توجد درجات نهائية بعد.</p>
                 }
                 else
                 {

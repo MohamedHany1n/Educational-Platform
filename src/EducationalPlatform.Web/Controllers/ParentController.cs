@@ -64,9 +64,13 @@ public class ParentController : Controller
                 TotalLessons = e.Course.Lessons.Count,
                 CompletedLessons = _context.LessonProgress.Count(lp =>
                     lp.StudentId == studentId && lp.IsCompleted && lp.Lesson.CourseId == e.CourseId),
+                // Grade visibility rule: only fully-graded attempts (no essays pending)
+                // on published exams are shown. A Submitted attempt with ungraded essays
+                // carries a null/partial score, so it is reported as pending, never as a grade.
                 Grades = _context.ExamAttempts
                     .Where(a => a.StudentId == studentId && a.Exam.CourseId == e.CourseId
-                        && a.Status != Models.Enums.AttemptStatus.InProgress)
+                        && a.Exam.IsPublished
+                        && a.Status == Models.Enums.AttemptStatus.Graded)
                     .OrderByDescending(a => a.SubmittedAt)
                     .Select(a => new ParentChildExamGradeViewModel
                     {
@@ -75,7 +79,11 @@ public class ParentController : Controller
                         TotalMarks = a.Exam.Questions.Sum(q => q.Marks),
                         SubmittedAt = a.SubmittedAt
                     })
-                    .ToList()
+                    .ToList(),
+                PendingGradingCount = _context.ExamAttempts.Count(a =>
+                    a.StudentId == studentId && a.Exam.CourseId == e.CourseId
+                    && a.Exam.IsPublished
+                    && a.Status == Models.Enums.AttemptStatus.Submitted)
             })
             .ToListAsync();
 

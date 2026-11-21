@@ -20,8 +20,14 @@
                 <div class="alert alert-info">
                     <h6>حسابات الدفع:</h6>
                     <ul class="mb-0">
-                        <li>انستاباي: <strong dir="ltr">@(string.IsNullOrWhiteSpace(instaPay) ? "يُعلن لاحقاً" : instaPay)</strong></li>
-                        <li>فودافون كاش: <strong dir="ltr">@(string.IsNullOrWhiteSpace(vodafoneCash) ? "يُعلن لاحقاً" : vodafoneCash)</strong></li>
+                        @if (!string.IsNullOrWhiteSpace(instaPay))
+                        {
+                            <li>انستاباي: <strong dir="ltr">@instaPay</strong></li>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(vodafoneCash))
+                        {
+                            <li>فودافون كاش: <strong dir="ltr">@vodafoneCash</strong></li>
+                        }
                     </ul>
                     <small>حوّل المبلغ بإحدى الطريقتين ثم ارفق صورة الإيصال ورقم العملية بالأسفل.</small>
                 </div>
