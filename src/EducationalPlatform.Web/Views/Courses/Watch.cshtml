@@ -1,0 +1,85 @@
+@model EducationalPlatform.Web.Models.ViewModels.Student.WatchCourseViewModel
+@{
+    ViewData["Title"] = Model.CourseTitle;
+    var firstLesson = Model.Lessons.FirstOrDefault();
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<h2 class="mb-4">@Model.CourseTitle</h2>
+
+@if (!Model.Lessons.Any())
+{
+    <p class="text-muted text-center my-4">لا توجد دروس منشورة في هذا الكورس بعد.</p>
+}
+else
+{
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <h5 id="currentLessonTitle">@firstLesson!.Title</h5>
+                    <div class="ratio ratio-16x9">
+                        <video id="lessonPlayer" controls controlsList="nodownload" src="@firstLesson.VideoUrl"></video>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header fw-bold">الدروس</div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var lesson in Model.Lessons)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <button type="button" class="btn btn-link text-decoration-none p-0 text-start lesson-btn"
+                                    data-url="@lesson.VideoUrl" data-title="@lesson.Title">
+                                @lesson.Order. @lesson.Title
+                            </button>
+                            <span class="d-flex align-items-center gap-2">
+                                @if (lesson.IsCompleted)
+                                {
+                                    <span class="badge bg-success">مكتمل</span>
+                                }
+                                else
+                                {
+                                    <form asp-action="MarkLessonCompleted" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="lessonId" value="@lesson.Id" />
+                                        <input type="hidden" name="courseId" value="@Model.CourseId" />
+                                        <button type="submit" class="btn btn-sm btn-outline-success">تمت المشاهدة</button>
+                                    </form>
+                                }
+                            </span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            document.querySelectorAll('.lesson-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    document.getElementById('lessonPlayer').src = this.dataset.url;
+                    document.getElementById('currentLessonTitle').textContent = this.dataset.title;
+                    document.getElementById('lessonPlayer').play();
+                });
+            });
+        </script>
+    }
+}

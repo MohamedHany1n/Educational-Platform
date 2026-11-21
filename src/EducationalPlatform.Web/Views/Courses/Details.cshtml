@@ -1,0 +1,43 @@
+@inject IConfiguration Configuration
+@model EducationalPlatform.Web.Models.ViewModels.Student.CourseDetailsViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    var paymentConfigured = !string.IsNullOrWhiteSpace(Configuration["PaymentInfo:InstaPay"])
+        || !string.IsNullOrWhiteSpace(Configuration["PaymentInfo:VodafoneCash"]);
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h2 class="card-title">@Model.Title</h2>
+        <p class="text-muted">المدرس: @Model.TeacherName</p>
+        <p class="card-text">@Model.Description</p>
+        <p class="fs-4 fw-bold">@Model.Price.ToString("N2") ج.م</p>
+        <p><span class="badge bg-secondary">@Model.LessonsCount درس</span></p>
+
+        @if (Model.IsEnrolled)
+        {
+            <a asp-action="Watch" asp-route-id="@Model.Id" class="btn btn-success">أنت مشترك - ابدأ المشاهدة</a>
+        }
+        else if (Model.HasPendingRequest)
+        {
+            <div class="alert alert-warning mb-0">لديك طلب دفع قيد المراجعة لهذا الكورس. <a asp-controller="Payments" asp-action="Mine">عرض طلباتي</a></div>
+        }
+        else if (!paymentConfigured)
+        {
+            <button type="button" class="btn btn-secondary btn-lg" disabled>الاشتراك غير متاح حالياً</button>
+            <p class="text-muted mt-2 mb-0">لم تُعلن حسابات الدفع بعد.</p>
+        }
+        else
+        {
+            <a asp-controller="Payments" asp-action="Create" asp-route-courseId="@Model.Id" class="btn btn-primary btn-lg">اشترك الآن</a>
+        }
+    </div>
+</div>

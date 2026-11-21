@@ -1,0 +1,54 @@
+@model List<EducationalPlatform.Web.Models.ViewModels.Parent.ParentChildViewModel>
+@{
+    ViewData["Title"] = "أولادي";
+}
+
+<h2 class="mb-4">أولادي</h2>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <p class="text-muted text-center my-4">لا يوجد طلاب مرتبطون بحسابك بعد. يتم الربط من خلال الإدارة.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>الطالب</th>
+                            <th>الهاتف</th>
+                            <th>الكورسات المشترك فيها</th>
+                            <th>طلبات دفع قيد المراجعة</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.StudentName</td>
+                                <td dir="ltr" style="text-align:right">@item.StudentPhone</td>
+                                <td><span class="badge bg-primary">@item.EnrolledCourseCount</span></td>
+                                <td>
+                                    @if (item.PendingPaymentCount > 0)
+                                    {
+                                        <span class="badge bg-warning text-dark">@item.PendingPaymentCount</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a asp-action="Details" asp-route-studentId="@item.StudentId" class="btn btn-sm btn-outline-primary">التقدم والدرجات</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

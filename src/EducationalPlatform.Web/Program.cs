@@ -9,6 +9,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<EducationalPlatform.Web.Repositories.IAdminRepository, EducationalPlatform.Web.Repositories.AdminRepository>();
 builder.Services.AddScoped<EducationalPlatform.Web.Services.IAdminService, EducationalPlatform.Web.Services.AdminService>();
+builder.Services.AddScoped<EducationalPlatform.Web.Services.IStudentService, EducationalPlatform.Web.Services.StudentService>();
+builder.Services.AddScoped<EducationalPlatform.Web.Services.INotificationService, EducationalPlatform.Web.Services.NotificationService>();
+builder.Services.Configure<EducationalPlatform.Web.Services.ReceiptStorageOptions>(builder.Configuration.GetSection("ReceiptStorage"));
+builder.Services.AddSingleton<EducationalPlatform.Web.Services.IReceiptStorage, EducationalPlatform.Web.Services.LocalReceiptStorage>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

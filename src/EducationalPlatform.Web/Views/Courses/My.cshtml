@@ -1,0 +1,30 @@
+@model List<EducationalPlatform.Web.Models.ViewModels.Student.CourseCardViewModel>
+@{
+    ViewData["Title"] = "كورساتي";
+}
+
+<h2 class="mb-4">كورساتي</h2>
+
+@if (!Model.Any())
+{
+    <p class="text-muted text-center my-4">لم تشترك في أي كورس بعد. <a asp-action="Index">تصفح الكورسات المتاحة</a>.</p>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        @foreach (var course in Model)
+        {
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">@course.Title</h5>
+                        <p class="card-text text-muted small">@course.TeacherName</p>
+                        <p class="card-text flex-grow-1">@course.Description</p>
+                        <span class="badge bg-secondary mb-2 align-self-start">@course.LessonsCount درس</span>
+                        <a asp-action="Watch" asp-route-id="@course.Id" class="btn btn-success w-100">متابعة المشاهدة</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

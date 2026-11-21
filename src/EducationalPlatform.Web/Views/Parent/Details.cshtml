@@ -1,0 +1,62 @@
+@model EducationalPlatform.Web.Models.ViewModels.Parent.ParentChildDetailsViewModel
+@{
+    ViewData["Title"] = "تقدم " + Model.StudentName;
+}
+
+<h2 class="mb-1">@Model.StudentName</h2>
+<p class="text-muted" dir="ltr" style="text-align:right">@Model.StudentPhone</p>
+
+@if (!Model.Courses.Any())
+{
+    <p class="text-muted text-center my-4">الطالب غير مشترك في أي كورس بعد.</p>
+}
+else
+{
+    @foreach (var course in Model.Courses)
+    {
+        var percent = course.TotalLessons == 0 ? 0 : (int)Math.Round(100.0 * course.CompletedLessons / course.TotalLessons);
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">@course.CourseTitle</h5>
+                    <small class="text-muted">مشترك منذ @course.EnrolledAt.ToLocalTime().ToString("yyyy/MM/dd")</small>
+                </div>
+
+                <div class="mb-1">الدروس المكتملة: @course.CompletedLessons من @course.TotalLessons</div>
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: @percent%"></div>
+                </div>
+
+                <h6>درجات الامتحانات:</h6>
+                @if (course.PendingGradingCount > 0)
+                {
+                    <p class="text-muted small">@course.PendingGradingCount امتحان قيد التصحيح، ستظهر درجته عند اكتمال التصحيح.</p>
+                }
+                @if (!course.Grades.Any())
+                {
+                    <p class="text-muted small mb-0">لا توجد درجات نهائية بعد.</p>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var grade in course.Grades)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span>@grade.ExamTitle</span>
+                                <span>
+                                    الدرجة: <strong dir="ltr">@(grade.Score?.ToString("0.##") ?? "-") / @grade.TotalMarks.ToString("0.##")</strong>
+                                    @if (grade.SubmittedAt.HasValue)
+                                    {
+                                        <small class="text-muted me-2">@grade.SubmittedAt.Value.ToLocalTime().ToString("yyyy/MM/dd")</small>
+                                    }
+                                </span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    }
+}
+
+<a asp-action="Index" class="btn btn-outline-secondary">رجوع</a>

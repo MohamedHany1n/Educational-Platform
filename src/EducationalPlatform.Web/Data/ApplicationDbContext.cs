@@ -26,6 +26,7 @@ public class ApplicationDbContext
     public DbSet<AttemptAnswer> AttemptAnswers => Set<AttemptAnswer>();
 
     public DbSet<AttemptAnswerOption> AttemptAnswerOptions => Set<AttemptAnswerOption>();
+    public DbSet<Notification> Notifications => Set<Notification>();
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -102,6 +103,16 @@ public class ApplicationDbContext
 
             // A student cannot enroll twice in the same course.
             e.HasIndex(x => new { x.StudentId, x.CourseId }).IsUnique();
+        });
+
+        // ---------- Notifications ----------
+        builder.Entity<Notification>(e =>
+        {
+            e.Property(n => n.Title).HasMaxLength(150).IsRequired();
+            e.Property(n => n.Body).HasMaxLength(1000).IsRequired();
+            e.Property(n => n.Url).HasMaxLength(300);
+            e.HasOne(n => n.User).WithMany().HasForeignKey(n => n.UserId);
+            e.HasIndex(n => new { n.UserId, n.IsRead });
         });
 
         // ---------- Exams ----------
