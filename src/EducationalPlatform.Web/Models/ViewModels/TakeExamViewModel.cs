@@ -11,12 +11,15 @@ public class TakeExamViewModel
         = new();
 }
 
+
 public class TakeQuestionViewModel
 {
     public int Id { get; set; }
     public string Text { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
     public decimal Marks { get; set; }
+
+    public string? EssayText { get; set; }
 
     public List<TakeOptionViewModel> Options { get; set; }
         = new();
@@ -26,4 +29,6 @@ public class TakeOptionViewModel
 {
     public int Id { get; set; }
     public string Text { get; set; } = string.Empty;
+
+    public bool IsSelected { get; set; }
 }

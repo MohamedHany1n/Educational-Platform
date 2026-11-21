@@ -1,0 +1,116 @@
+﻿@model EducationalPlatform.Web.ViewModels.AttemptDetailsViewModel
+
+@{
+    ViewData["Title"] = "Attempt Details";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Attempt Details</h2>
+        <a asp-action="History" class="btn btn-outline-secondary">
+            Back to My Attempts
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4>@Model.ExamTitle</h4>
+            <p class="text-muted mb-2">@Model.CourseTitle</p>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Attempt:</strong> #@Model.AttemptNumber
+                </div>
+                <div class="col-md-4">
+                    <strong>Status:</strong> @Model.Status
+                </div>
+                <div class="col-md-4">
+                    <strong>Total Score:</strong>
+                    @(Model.TotalScore?.ToString("0.##") ?? "Pending")
+                </div>
+            </div>
+
+            <hr />
+
+            <p>
+                <strong>Started:</strong>
+                @Model.StartedAt.ToLocalTime().ToString("g")
+            </p>
+
+            <p class="mb-0">
+                <strong>Submitted:</strong>
+                @(Model.SubmittedAt?.ToLocalTime().ToString("g") ?? "Not submitted")
+            </p>
+        </div>
+    </div>
+
+    <h4 class="mb-3">Your Answers</h4>
+
+    @for (int i = 0; i < Model.Answers.Count; i++)
+    {
+        var answer = Model.Answers[i];
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <h5>Question @(i + 1)</h5>
+                    <span class="text-muted">
+                        @answer.Marks Marks
+                    </span>
+                </div>
+
+                <p>@answer.QuestionText</p>
+
+                @if (answer.QuestionType == "MCQ")
+                {
+                    <div class="mb-3">
+                        <strong>Your selected answers:</strong>
+
+                        @if (!answer.Options.Any(o => o.IsSelected))
+                        {
+                            <p class="text-muted">No answer selected.</p>
+                        }
+                        else
+                        {
+                            <ul>
+                                @foreach (var option in answer.Options.Where(o => o.IsSelected))
+                                {
+                                    <li>@option.Text</li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="mb-3">
+                        <strong>Your answer:</strong>
+                        <p class="mt-2">
+                            @(string.IsNullOrWhiteSpace(answer.EssayText)
+                                ? "No answer provided."
+                                : answer.EssayText)
+                        </p>
+                    </div>
+                }
+
+                <hr />
+
+                <div class="d-flex justify-content-between">
+                    <strong>Score:</strong>
+                    <span>
+                        @(answer.Score?.ToString("0.##") ?? "Pending")
+                        / @answer.Marks
+                    </span>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(answer.TeacherFeedback))
+                {
+                    <div class="alert alert-info mt-3 mb-0">
+                        <strong>Teacher Feedback:</strong>
+                        <p class="mb-0">@answer.TeacherFeedback</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

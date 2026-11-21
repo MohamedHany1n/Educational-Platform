@@ -124,9 +124,13 @@ public class ExamsController : Controller
         if (!ownsExam)
             return NotFound();
 
+        int questionNumber = await _context.Questions
+     .CountAsync(q => q.ExamId == examId) + 1;
+
         var model = new AddQuestionViewModel
         {
-            ExamId = examId
+            ExamId = examId,
+            QuestionNumber = questionNumber
         };
 
         return View(model);
@@ -147,6 +151,18 @@ public class ExamsController : Controller
         if (!ownsExam)
             return NotFound();
 
+        bool hasAttempts = await _context.ExamAttempts
+    .AnyAsync(a => a.ExamId == model.ExamId);
+
+        if (hasAttempts)
+        {
+            TempData["ErrorMessage"] =
+                "لا يمكن إضافة أسئلة بعد بدء الطلاب للامتحان.";
+
+            return RedirectToAction(
+                nameof(ManageQuestions),
+                new { examId = model.ExamId });
+        }
         if (!Enum.IsDefined(typeof(QuestionType), model.Type))
         {
             ModelState.AddModelError(
@@ -387,6 +403,13 @@ public class ExamsController : Controller
         if (exam == null)
             return NotFound();
 
+        bool hasAttempts = await _context.ExamAttempts
+             .AnyAsync(a => a.ExamId == examId);
+
+        ViewBag.CanManageQuestions = !hasAttempts;
+
+
+
         var questions = await _context.Questions
             .Where(q => q.ExamId == examId)
             .Select(q => new ManageQuestionViewModel
@@ -459,6 +482,149 @@ public class ExamsController : Controller
         };
 
         return View(model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> PendingGrading()
+    {
+        var teacherIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(teacherIdValue, out int teacherId))
+            return Unauthorized();
+
+        var attempts = await _context.ExamAttempts
+            .Where(a =>
+                a.Exam.Course.TeacherId == teacherId &&
+                a.Status == AttemptStatus.Submitted &&
+                a.Answers.Any(answer =>
+                    answer.Question.Type == QuestionType.Essay &&
+                    answer.Score == null))
+            .OrderBy(a => a.SubmittedAt)
+            .Select(a => new PendingGradingViewModel
+            {
+                AttemptId = a.Id,
+                StudentName = a.Student.UserName!,
+                ExamTitle = a.Exam.Title,
+                CourseTitle = a.Exam.Course.Title,
+                AttemptNumber = a.AttemptNumber,
+                SubmittedAt = a.SubmittedAt ?? a.StartedAt,
+                PendingEssaysCount = a.Answers.Count(answer =>
+                    answer.Question.Type == QuestionType.Essay &&
+                    answer.Score == null)
+            })
+            .ToListAsync();
+
+        return View(attempts);
+    }
+    [HttpGet]
+    public async Task<IActionResult> GradeAttempt(int id)
+    {
+        var teacherIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(teacherIdValue, out int teacherId))
+            return Unauthorized();
+
+        var attempt = await _context.ExamAttempts
+            .Where(a =>
+                a.Id == id &&
+                a.Exam.Course.TeacherId == teacherId &&
+                a.Status == AttemptStatus.Submitted)
+            .Select(a => new GradeAttemptViewModel
+            {
+                AttemptId = a.Id,
+                StudentName = a.Student.UserName!,
+                ExamTitle = a.Exam.Title,
+                AttemptNumber = a.AttemptNumber,
+
+                Answers = a.Answers
+                    .Where(answer => answer.Question.Type == QuestionType.Essay)
+                    .Select(answer => new GradeAnswerViewModel
+                    {
+                        AnswerId = answer.Id,
+                        QuestionText = answer.Question.Text,
+                        Marks = answer.Question.Marks,
+                        EssayText = answer.EssayText,
+                        Score = answer.Score,
+                        TeacherFeedback = answer.TeacherFeedback
+                    })
+                    .ToList()
+            })
+            .FirstOrDefaultAsync();
+
+        if (attempt == null)
+            return NotFound();
+
+        return View(attempt);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GradeAttempt(
+    int id,
+    GradeAttemptViewModel model)
+    {
+        var teacherIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(teacherIdValue, out int teacherId))
+            return Unauthorized();
+
+        if (model.AttemptId != id)
+            return BadRequest();
+
+        var attempt = await _context.ExamAttempts
+            .Include(a => a.Exam)
+                .ThenInclude(e => e.Course)
+            .Include(a => a.Answers)
+                .ThenInclude(a => a.Question)
+            .FirstOrDefaultAsync(a =>
+                a.Id == id &&
+                a.Exam.Course.TeacherId == teacherId &&
+                a.Status == AttemptStatus.Submitted);
+
+        if (attempt == null)
+            return NotFound();
+
+        var essayAnswers = attempt.Answers
+            .Where(a => a.Question.Type == QuestionType.Essay)
+            .ToList();
+
+        if (essayAnswers.Count != model.Answers.Count ||
+            essayAnswers.Any(a => model.Answers.Count(x => x.AnswerId == a.Id) != 1))
+        {
+            return BadRequest("Invalid grading data.");
+        }
+
+        foreach (var answer in essayAnswers)
+        {
+            var gradedAnswer = model.Answers
+                .First(x => x.AnswerId == answer.Id);
+
+            if (!gradedAnswer.Score.HasValue ||
+                gradedAnswer.Score < 0 ||
+                gradedAnswer.Score > answer.Question.Marks)
+            {
+                return BadRequest("Invalid score.");
+            }
+
+            if (gradedAnswer.TeacherFeedback?.Length > 500)
+                return BadRequest("Feedback is too long.");
+
+            answer.Score = gradedAnswer.Score.Value;
+            answer.TeacherFeedback = gradedAnswer.TeacherFeedback?.Trim();
+        }
+        bool hasUngradedAnswers = attempt.Answers.Any(a => !a.Score.HasValue);
+
+        if (hasUngradedAnswers)
+            return BadRequest("Some answers are not graded.");
+
+        attempt.TotalScore = attempt.Answers.Sum(a => a.Score ?? 0);
+        attempt.Status = AttemptStatus.Graded;
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Exam attempt graded successfully.";
+
+        return RedirectToAction(nameof(PendingGrading));
     }
 
     [HttpPost]

@@ -26,6 +26,7 @@
                         <th>Submitted At</th>
                         <th>Status</th>
                         <th>Score</th>
+                        <th>Details</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -56,6 +57,14 @@
                             <td>
                                 @(attempt.TotalScore?.ToString("0.##") ?? "Pending")
                             </td>
+                            <td>
+                                    <a asp-controller="StudentExams"
+                                       asp-action="AttemptDetails"
+                                       asp-route-id="@attempt.AttemptId"
+                                       class="btn btn-sm btn-outline-primary">
+                                        View Details
+                                    </a>
+                                </td>
                         </tr>
                     }
                 </tbody>

@@ -1,7 +1,12 @@
-﻿@model EducationalPlatform.Web.ViewModels.TakeExamViewModel
+﻿@model EducationalPlatform.Web.ViewModels.TakeExamViewModel;
 
 @{
     ViewData["Title"] = "حل الامتحان";
+
+    // Remaining time computed on the server at render time (never trusts the client clock).
+    var remainingMs = Math.Max(
+        0L,
+        (long)(Model.StartedAt.AddMinutes(Model.DurationMinutes) - DateTime.UtcNow).TotalMilliseconds);
 }
 
 <div class="container mt-4" dir="rtl">
@@ -27,6 +32,11 @@
         </div>
     </div>
 
+    @if (TempData["SubmitError"] is string submitError)
+    {
+        <div class="alert alert-warning">@submitError</div>
+    }
+
     <form id="examForm"
           asp-action="Submit"
           asp-route-id="@Model.AttemptId"
@@ -34,58 +44,170 @@
 
         @Html.AntiForgeryToken()
 
-        @for (int i = 0; i < Model.Questions.Count; i++)
-        {
-            var question = Model.Questions[i];
+        <div class="row g-4">
 
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
+            <!-- Questions Area -->
+            <div class="col-lg-9">
 
-                    <h5 class="mb-3">
-                        السؤال @(i + 1)
-                    </h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span id="questionCounter" class="fw-bold">
+                        السؤال 1 من @Model.Questions.Count
+                    </span>
 
-                    <p>@question.Text</p>
+                    <span id="progressText" class="text-muted">
+                        0% مكتمل
+                    </span>
+                </div>
 
-                    <small class="text-muted">
-                        الدرجة: @question.Marks
-                    </small>
+                <div class="progress mb-4" style="height: 8px;">
+                    <div id="examProgress"
+                         class="progress-bar"
+                         role="progressbar"
+                         style="width: 0%">
+                    </div>
+                </div>
 
-                    <input type="hidden"
-                           name="Answers[@i].QuestionId"
-                           value="@question.Id" />
+                @for (int i = 0; i < Model.Questions.Count; i++)
+                {
+                    var question = Model.Questions[i];
 
-                    @if (question.Type == "MCQ")
-                    {
-                        <div class="mt-3">
-                            @foreach (var option in question.Options)
+                    <div class="card shadow-sm mb-4 exam-question"
+                         data-question-index="@i"
+                         style="display: @(i == 0 ? "block" : "none")">
+
+                        <div class="card-body">
+
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">
+                                    السؤال @(i + 1)
+                                </h5>
+
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary flag-button">
+                                    تحديد للمراجعة
+                                </button>
+                            </div>
+
+                            <p>@question.Text</p>
+
+                            <small class="text-muted">
+                                الدرجة: @question.Marks
+                            </small>
+
+                            <input type="hidden"
+                                   name="Answers[@i].QuestionId"
+                                   value="@question.Id" />
+
+                            @if (question.Type == "MCQ")
                             {
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input mcq-option"
-                                           type="checkbox"
-                                           name="Answers[@i].SelectedOptionIds"
-                                           value="@option.Id"
-                                           data-question-id="@question.Id" />
+                                <div class="mt-3">
+                                    @foreach (var option in question.Options)
+                                    {
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input mcq-option"
+                                                   type="checkbox"
+                                                   name="Answers[@i].SelectedOptionIds"
+                                                   value="@option.Id"
+                                                   checked="@option.IsSelected"
+                                                   data-question-id="@question.Id" />
 
-                                    <label class="form-check-label">
-                                        @option.Text
-                                    </label>
+                                            <label class="form-check-label">
+                                                @option.Text
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else if (question.Type == "Essay")
+                            {
+                                <textarea class="form-control mt-3 essay-answer"
+                                          name="Answers[@i].EssayText"
+                                          data-question-id="@question.Id"
+                                          rows="5"
+                                          placeholder="اكتب إجابتك هنا...">@question.EssayText</textarea>
+                            }
+
+                 
+
+                        </div>
+                    </div>
+                }
+
+                <div class="d-flex justify-content-between mb-4">
+                    <button type="button"
+                            id="previousButton"
+                            class="btn btn-outline-primary">
+                        السابق
+                    </button>
+
+                    <button type="button"
+                            id="nextButton"
+                            class="btn btn-primary">
+                        التالي
+                    </button>
+                </div>
+
+            </div>
+
+          
+            <!-- Question Navigator -->
+            <div class="col-lg-3">
+                <div class="card shadow-sm sticky-top" style="top: 20px;">
+                    <div class="card-body">
+
+                        <h5 class="mb-3">الأسئلة</h5>
+
+                        <div id="questionNavigator"
+                             class="d-grid"
+                             style="grid-template-columns: repeat(4, 1fr); gap: 10px;">
+
+                            @for (int i = 0; i < Model.Questions.Count; i++)
+                            {
+                                <div class="position-relative">
+
+                                    <button type="button"
+                                            class="btn btn-outline-danger question-nav-button w-100"
+                                            data-question-index="@i">
+                                        @(i + 1)
+                                    </button>
+
+                                    <span class="flag-indicator d-none"
+                                          style="position: absolute; top: -8px; right: -5px; z-index: 2;">
+
+                                        <svg width="18" height="18"
+                                             viewBox="0 0 200 200"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M 42 20 Q 75 35, 110 25 T 175 30 L 175 115 Q 140 100, 110 110 T 42 100 Z"
+                                                  fill="#D91E18" />
+                                            <rect x="35" y="15" width="7" height="185"
+                                                  fill="#8C8C8C" />
+                                        </svg>
+
+                                    </span>
+
                                 </div>
                             }
                         </div>
-                    }
-                    else if (question.Type == "Essay")
-                    {
-                        <textarea class="form-control mt-3 essay-answer"
-                                  name="Answers[@i].EssayText"
-                                  data-question-id="@question.Id"
-                                  rows="5"
-                                  placeholder="اكتب إجابتك هنا..."></textarea>
-                    }
 
+                        <hr />
+
+                        <div class="small">
+                            <p class="mb-2">
+                                <span class="badge bg-success">&nbsp;</span>
+                                تمت الإجابة
+                            </p>
+
+                            <p class="mb-2">
+                                <span class="badge bg-danger">&nbsp;</span>
+                                لم تتم الإجابة
+                            </p>
+                        </div>
+
+                    </div>
                 </div>
             </div>
-        }
+
+        </div> <!-- End row -->
 
         <div class="text-center mb-5">
             <button id="submitButton"
@@ -97,178 +219,549 @@
 
     </form>
 
+
 </div>
 
+<!-- Incomplete Questions Alert -->
+<div id="incompleteQuestionsModal" class="incomplete-modal d-none">
+    <div class="incomplete-modal-content">
+
+        <div class="incomplete-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+
+        <h4>لم يتم إكمال الامتحان</h4>
+
+        <p>
+            لسه فيه أسئلة من غير إجابة.
+            راجع الأسئلة التالية قبل تسليم الامتحان:
+        </p>
+
+        <div id="unansweredQuestionsList"
+             class="unanswered-questions-list">
+        </div>
+
+        <button type="button"
+                id="closeIncompleteModal"
+                class="btn btn-primary w-100 mt-3">
+            العودة للامتحان
+        </button>
+
+    </div>
+</div>
+
+<style>
+    .incomplete-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        padding: 20px;
+        animation: fadeIn 0.2s ease;
+    }
+
+        .incomplete-modal.d-none {
+            display: none;
+        }
+
+    .incomplete-modal-content {
+        background: white;
+        color: #212529;
+        width: 100%;
+        max-width: 450px;
+        padding: 30px;
+        border-radius: 18px;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        animation: slideUp 0.25s ease;
+    }
+
+    .incomplete-icon {
+        color: #f0ad4e;
+        font-size: 45px;
+        margin-bottom: 15px;
+    }
+
+    .unanswered-questions-list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .unanswered-question-item {
+        background: #fde8e7;
+        color: #c0392b;
+        border: 1px solid #f5c6c3;
+        border-radius: 8px;
+        padding: 8px 14px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .unanswered-question-item:hover {
+            background: #f8d0cd;
+        }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @@keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
 @section Scripts {
     <script>
-        const form = document.getElementById("examForm");
-        const timerElement = document.getElementById("timer");
-        const saveStatus = document.getElementById("saveStatus");
-        const submitButton = document.getElementById("submitButton");
+        (function() {
+            "use strict";
 
-        const saveAnswerUrl = '@Url.Action("SaveAnswer", "StudentExams", new { id = Model.AttemptId })';
+            /* =====================================================================
+             * 1. TIMER - started first and independent of everything else.
+             *    remainingMs is computed on the SERVER when the page is rendered,
+             *    so a wrong client clock cannot change the exam length.
+             *    The client takes the smaller of a monotonic clock and the wall
+             *    clock so neither a clock change nor a sleeping laptop gives the
+             *    student extra time on screen. The server remains the authority.
+             * ===================================================================== */
+            const serverRemainingMs = @remainingMs;
+            const perfDeadline = performance.now() + serverRemainingMs;
+            const wallDeadline = Date.now() + serverRemainingMs;
 
-        const token = form.querySelector(
-            'input[name="__RequestVerificationToken"]'
-        ).value;
+            const AUTO_SUBMIT_DELAY_MS = 1500;  // lets the server clock pass expiry
+            const FLUSH_TIMEOUT_MS = 8000;      // auto-submit is never blocked longer than this
+            const REQUEST_TIMEOUT_MS = 10000;
 
-        const startedAt = new Date(
-            "@DateTime.SpecifyKind(Model.StartedAt, DateTimeKind.Utc).ToString("o")"
-        );
-        const durationMs = @Model.DurationMinutes * 60 * 1000;
-        const expiresAt = startedAt.getTime() + durationMs;
+            const timerElement = document.getElementById("timer");
+            let timerInterval = null;
+            let expired = false;
 
-        const essayTimers = new Map();
-        const pendingSaves = new Set();
-
-        let submitting = false;
-
-        async function saveAnswer(questionId, data) {
-            const params = new URLSearchParams();
-
-            params.append("QuestionId", questionId);
-
-            if (data.type === "MCQ") {
-                data.selectedIds.forEach(id => {
-                    params.append("SelectedOptionIds", id);
-                });
-            } else {
-                params.append("EssayText", data.text);
+            function remainingMs() {
+                return Math.max(0, Math.min(
+                    perfDeadline - performance.now(),
+                    wallDeadline - Date.now()));
             }
 
-            saveStatus.textContent = "جاري حفظ الإجابة...";
+            function tick() {
+                const remaining = Math.ceil(remainingMs() / 1000);
+                const minutes = Math.floor(remaining / 60);
+                const seconds = remaining % 60;
 
-            const request = fetch(saveAnswerUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "RequestVerificationToken": token
-                },
-                body: params
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error("Save failed");
-                    }
+                timerElement.textContent =
+                    `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 
-                    saveStatus.textContent = "تم حفظ الإجابة";
-                })
-                .catch(() => {
-                    saveStatus.textContent = "تعذر حفظ الإجابة، حاول مرة أخرى";
-                });
-
-            pendingSaves.add(request);
-
-            try {
-                await request;
-            } finally {
-                pendingSaves.delete(request);
-            }
-        }
-
-        // Save MCQ answers whenever a checkbox changes.
-        document.querySelectorAll(".mcq-option").forEach(input => {
-            input.addEventListener("change", () => {
-                const questionId = input.dataset.questionId;
-
-                const selectedIds = Array.from(
-                    document.querySelectorAll(
-                        `.mcq-option[data-question-id="${questionId}"]:checked`
-                    )
-                ).map(option => option.value);
-
-                saveAnswer(questionId, {
-                    type: "MCQ",
-                    selectedIds
-                });
-            });
-        });
-
-        // Save Essay answers after the student stops typing.
-        document.querySelectorAll(".essay-answer").forEach(textarea => {
-            textarea.addEventListener("input", () => {
-                const questionId = textarea.dataset.questionId;
-
-                clearTimeout(essayTimers.get(questionId));
-
-                const timer = setTimeout(() => {
-                    saveAnswer(questionId, {
-                        type: "Essay",
-                        text: textarea.value
-                    });
-                }, 700);
-
-                essayTimers.set(questionId, timer);
-            });
-        });
-
-        // Countdown timer.
-        async function updateTimer() {
-            const remaining = Math.max(
-                0,
-                Math.ceil((expiresAt - Date.now()) / 1000)
-            );
-
-            const minutes = Math.floor(remaining / 60);
-            const seconds = remaining % 60;
-
-            timerElement.textContent =
-                `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-
-            if (remaining <= 0) {
-                clearInterval(timerInterval);
-
-                if (!submitting) {
-                    submitting = true;
-                    submitButton.disabled = true;
-
-                    saveStatus.textContent =
-                        "انتهى الوقت، جاري تسليم الامتحان...";
-
-                    // Cancel pending debounce timers.
-                    essayTimers.forEach(timer => clearTimeout(timer));
-                    essayTimers.clear();
-
-                    // Wait for already-running autosave requests.
-                    await Promise.all([...pendingSaves]);
-
-                    // Submit directly without triggering the submit handler again.
-                    form.submit();
+                if (remaining <= 0 && !expired) {
+                    expired = true;
+                    clearInterval(timerInterval);
+                    // Deferred so the rest of the script has finished initialising.
+                    setTimeout(() => submitExam(true), 0);
                 }
             }
-        }
 
-        updateTimer();
+            tick();
+            timerInterval = setInterval(tick, 250);
+            document.addEventListener("visibilitychange", tick);
 
-        const timerInterval = setInterval(updateTimer, 1000);
+            /* =====================================================================
+             * 2. Elements and shared state
+             * ===================================================================== */
+            const form = document.getElementById("examForm");
+            const saveStatus = document.getElementById("saveStatus");
+            const submitButton = document.getElementById("submitButton");
 
-        // Flush pending Essay saves before manual submission.
-        form.addEventListener("submit", async event => {
-            if (submitting) {
-                return;
+            const saveAnswerUrl = '@Url.Action("SaveAnswer", "StudentExams", new { id = Model.AttemptId })';
+
+            const token = form.querySelector(
+                'input[name="__RequestVerificationToken"]'
+            ).value;
+
+            let submitting = false;
+
+            const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+            /* =====================================================================
+             * 3. Auto-save engine
+             *    - pending : latest unsent value per question (newer replaces older)
+             *    - unsaved : values whose save failed after retries
+             *    - exactly ONE request is in flight at a time (drain loop)
+             *    Saving is idempotent (the server replaces the stored answer with
+             *    the posted one), so retrying a failed request is safe.
+             * ===================================================================== */
+            const essayTimers = new Map();
+            const pending = new Map();
+            const unsaved = new Map();
+            let draining = null;
+
+            function buildBody(questionId, data) {
+                const params = new URLSearchParams();
+                params.append("QuestionId", questionId);
+
+                if (data.type === "MCQ") {
+                    data.selectedIds.forEach(id => params.append("SelectedOptionIds", id));
+                } else {
+                    params.append("EssayText", data.text);
+                }
+                return params;
             }
 
-            event.preventDefault();
+            // Returns "ok", "fatal" (4xx - retrying cannot help) or "failed".
+            async function sendSave(questionId, data) {
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    const controller = new AbortController();
+                    const abortTimer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-            submitting = true;
-            submitButton.disabled = true;
+                    try {
+                        const response = await fetch(saveAnswerUrl, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded",
+                                "RequestVerificationToken": token
+                            },
+                            body: buildBody(questionId, data),
+                            signal: controller.signal
+                        });
 
-            essayTimers.forEach(timer => clearTimeout(timer));
-            essayTimers.clear();
+                        if (response.ok) return "ok";
+                        if (response.status >= 400 && response.status < 500) return "fatal";
+                        // 5xx (for example a deadlock victim) falls through to a retry.
+                    } catch (e) {
+                        // Network error or timeout: retry.
+                    } finally {
+                        clearTimeout(abortTimer);
+                    }
 
-            const essaySaves = Array.from(
-                document.querySelectorAll(".essay-answer")
-            ).map(textarea =>
-                saveAnswer(textarea.dataset.questionId, {
-                    type: "Essay",
-                    text: textarea.value
-                })
-            );
+                    await delay(400 * attempt);
+                }
+                return "failed";
+            }
 
-            await Promise.all(essaySaves);
-            await Promise.all([...pendingSaves]);
+            function drain() {
+                if (draining) return draining;
 
-            form.submit();
-        });
+                draining = (async () => {
+                    await null; // guarantees `draining` is assigned before the loop's finally runs
+                    let allOk = true;
+
+                    try {
+                        while (pending.size > 0) {
+                            const [questionId, data] = pending.entries().next().value;
+                            pending.delete(questionId);
+
+                            saveStatus.textContent = "جاري حفظ الإجابة...";
+                            const result = await sendSave(questionId, data);
+
+                            if (result === "ok") {
+                                unsaved.delete(questionId);
+                            } else {
+                                allOk = false;
+                                // A newer value for the same question supersedes the failed one.
+                                if (!pending.has(questionId)) unsaved.set(questionId, data);
+                            }
+                        }
+                    } finally {
+                        draining = null;
+                    }
+
+                    saveStatus.textContent = allOk
+                        ? "تم حفظ الإجابة"
+                        : "تعذر حفظ الإجابة، حاول مرة أخرى";
+                    return allOk;
+                })();
+
+                return draining;
+            }
+
+            function queueSave(questionId, data) {
+                if (submitting) return;
+                pending.set(questionId, data);
+                unsaved.delete(questionId);
+                drain();
+            }
+
+            // Saves everything outstanding. Resolves true only if nothing is left unsaved.
+            async function flushAll() {
+                // Essays still waiting on their debounce timer: save the current text now.
+                document.querySelectorAll(".essay-answer").forEach(textarea => {
+                    const questionId = textarea.dataset.questionId;
+                    if (essayTimers.has(questionId)) {
+                        clearTimeout(essayTimers.get(questionId));
+                        essayTimers.delete(questionId);
+                        pending.set(questionId, { type: "Essay", text: textarea.value });
+                        unsaved.delete(questionId);
+                    }
+                });
+
+                // Retry earlier failures unless a newer value exists.
+                unsaved.forEach((data, questionId) => {
+                    if (!pending.has(questionId)) pending.set(questionId, data);
+                });
+                unsaved.clear();
+
+                let ok = true;
+                do {
+                    if (pending.size > 0 || draining) {
+                        ok = (await drain()) && ok;
+                    }
+                } while (pending.size > 0);
+
+                return ok && unsaved.size === 0;
+            }
+
+            // MCQ: save whenever a checkbox changes.
+            document.querySelectorAll(".mcq-option").forEach(input => {
+                input.addEventListener("change", () => {
+                    const questionId = input.dataset.questionId;
+
+                    const selectedIds = Array.from(
+                        document.querySelectorAll(
+                            `.mcq-option[data-question-id="${questionId}"]:checked`
+                        )
+                    ).map(option => option.value);
+
+                    queueSave(questionId, { type: "MCQ", selectedIds });
+                });
+            });
+
+            // Essay: save 700ms after the student stops typing.
+            document.querySelectorAll(".essay-answer").forEach(textarea => {
+                textarea.addEventListener("input", () => {
+                    if (submitting) return;
+
+                    const questionId = textarea.dataset.questionId;
+                    clearTimeout(essayTimers.get(questionId));
+
+                    const timer = setTimeout(() => {
+                        essayTimers.delete(questionId);
+                        queueSave(questionId, { type: "Essay", text: textarea.value });
+                    }, 700);
+
+                    essayTimers.set(questionId, timer);
+                });
+            });
+
+            /* =====================================================================
+             * 4. Question navigation, progress and flags (behaviour unchanged)
+             * ===================================================================== */
+            const questions = Array.from(document.querySelectorAll(".exam-question"));
+            const navButtons = Array.from(document.querySelectorAll(".question-nav-button"));
+
+            const previousButton = document.getElementById("previousButton");
+            const nextButton = document.getElementById("nextButton");
+            const questionCounter = document.getElementById("questionCounter");
+            const progressText = document.getElementById("progressText");
+            const examProgress = document.getElementById("examProgress");
+
+            let currentQuestionIndex = 0;
+
+            function isAnswered(question) {
+                const mcqOptions = question.querySelectorAll(".mcq-option");
+
+                if (mcqOptions.length > 0) {
+                    return Array.from(mcqOptions).some(option => option.checked);
+                }
+
+                const essay = question.querySelector(".essay-answer");
+                return !!essay && essay.value.trim().length > 0;
+            }
+
+            function updateNavigator() {
+                let answeredCount = 0;
+
+                questions.forEach((question, index) => {
+                    const answered = isAnswered(question);
+                    const flagged = question.dataset.flagged === "true";
+                    const button = navButtons[index];
+
+                    button.className = "btn question-nav-button w-100";
+                    button.classList.add(answered ? "btn-success" : "btn-danger");
+
+                    if (index === currentQuestionIndex) {
+                        button.classList.add("active");
+                    }
+
+                    const flagIndicator = button.parentElement.querySelector(".flag-indicator");
+                    flagIndicator.classList.toggle("d-none", !flagged);
+
+                    if (answered) answeredCount++;
+                });
+
+                const percentage = questions.length === 0
+                    ? 0
+                    : Math.round((answeredCount / questions.length) * 100);
+
+                progressText.textContent = `${percentage}% مكتمل`;
+                examProgress.style.width = `${percentage}%`;
+                questionCounter.textContent =
+                    `السؤال ${currentQuestionIndex + 1} من ${questions.length}`;
+            }
+
+            function showQuestion(index) {
+                if (index < 0 || index >= questions.length) return;
+
+                currentQuestionIndex = index;
+
+                questions.forEach((question, i) => {
+                    question.style.display = i === index ? "block" : "none";
+                });
+
+                previousButton.disabled = index === 0;
+                nextButton.disabled = index === questions.length - 1;
+
+                updateNavigator();
+            }
+
+            previousButton.addEventListener("click", () => showQuestion(currentQuestionIndex - 1));
+            nextButton.addEventListener("click", () => showQuestion(currentQuestionIndex + 1));
+
+            navButtons.forEach((button, index) => {
+                button.addEventListener("click", () => showQuestion(index));
+            });
+
+            // Flag questions for review.
+            questions.forEach(question => {
+                const flagButton = question.querySelector(".flag-button");
+                if (!flagButton) return;
+
+                flagButton.addEventListener("click", () => {
+                    const flagged = question.dataset.flagged !== "true";
+                    question.dataset.flagged = flagged;
+
+                    flagButton.innerHTML = flagged
+                        ? "إلغاء التحديد للمراجعة"
+                        : "تحديد للمراجعة";
+
+                    updateNavigator();
+                });
+            });
+
+            // Refresh navigator colours whenever an answer changes.
+            document.querySelectorAll(".mcq-option, .essay-answer").forEach(input => {
+                input.addEventListener("input", updateNavigator);
+                input.addEventListener("change", updateNavigator);
+            });
+
+            /* =====================================================================
+             * 5. Incomplete-questions modal
+             * ===================================================================== */
+            const incompleteModal = document.getElementById("incompleteQuestionsModal");
+            const unansweredQuestionsList = document.getElementById("unansweredQuestionsList");
+            const closeIncompleteModal = document.getElementById("closeIncompleteModal");
+
+            function showIncompleteQuestionsAlert(questionNumbers) {
+                unansweredQuestionsList.innerHTML = "";
+
+                questionNumbers.forEach(number => {
+                    const questionButton = document.createElement("button");
+                    questionButton.type = "button";
+                    questionButton.className = "unanswered-question-item";
+                    questionButton.textContent = `السؤال ${number}`;
+
+                    questionButton.addEventListener("click", () => {
+                        incompleteModal.classList.add("d-none");
+                        showQuestion(number - 1);
+                        questions[number - 1].scrollIntoView({
+                            behavior: "smooth",
+                            block: "center"
+                        });
+                    });
+
+                    unansweredQuestionsList.appendChild(questionButton);
+                });
+
+                incompleteModal.classList.remove("d-none");
+            }
+
+            closeIncompleteModal.addEventListener("click", () => {
+                incompleteModal.classList.add("d-none");
+            });
+
+            document.addEventListener("keydown", event => {
+                if (event.key === "Escape") incompleteModal.classList.add("d-none");
+            });
+
+            /* =====================================================================
+             * 6. Submission
+             *    auto = true  : timer expired. Never validated, never blocked.
+             *    auto = false : student clicked Submit. Blocked while any question
+             *                   is unanswered (the server enforces this too).
+             * ===================================================================== */
+            function setLocked(locked) {
+                submitting = locked;
+                submitButton.disabled = locked;
+                document.querySelectorAll(".essay-answer").forEach(t => { t.readOnly = locked; });
+            }
+
+            async function submitExam(auto) {
+                if (submitting) return;
+
+                const timeExpired = auto || remainingMs() <= 0;
+
+                if (!timeExpired) {
+                    const unanswered = questions
+                        .map((question, index) => (!isAnswered(question) ? index + 1 : null))
+                        .filter(number => number !== null);
+
+                    if (unanswered.length > 0) {
+                        showIncompleteQuestionsAlert(unanswered);
+                        return;
+                    }
+                }
+
+                setLocked(true);
+                incompleteModal.classList.add("d-none");
+
+                saveStatus.textContent = timeExpired
+                    ? "انتهى الوقت، جاري تسليم الامتحان..."
+                    : "جاري حفظ الإجابات وتسليم الامتحان...";
+
+                if (timeExpired) {
+                    // Best effort: save the last edits, but never block submission.
+                    await Promise.all([
+                        Promise.race([flushAll(), delay(FLUSH_TIMEOUT_MS)]),
+                        delay(AUTO_SUBMIT_DELAY_MS)
+                    ]);
+                } else {
+                    const ok = await flushAll();
+
+                    // Do not submit if answers could not be saved - unless time ran out meanwhile.
+                    if (!ok && remainingMs() > 0) {
+                        setLocked(false);
+                        saveStatus.textContent =
+                            "تعذر حفظ بعض الإجابات. تأكد من الاتصال بالإنترنت ثم حاول التسليم مرة أخرى.";
+                        return;
+                    }
+                }
+
+                form.submit();
+            }
+
+            form.addEventListener("submit", event => {
+                event.preventDefault();
+                submitExam(false);
+            });
+
+            /* =====================================================================
+             * 7. Initial render
+             * ===================================================================== */
+            showQuestion(0);
+        })();
     </script>
 }

@@ -69,10 +69,17 @@
                                             <a class="nav-link fw-bold text-primary"
                                                asp-controller="Exams"
                                                asp-action="MyExams">
-                                                امتحاناتي
+                                                الامتحانات
                                             </a>
                                         </li>
                                     }
+                                    <li class="nav-item">
+                                        <a class="nav-link fw-bold text-info"
+                                           asp-controller="Exams"
+                                           asp-action="PendingGrading">
+                                            قيد المراجعة
+                                        </a>
+                                    </li>
                             }
 
                             @if (User.IsInRole("Student"))
@@ -81,7 +88,7 @@
                                 <a class="nav-link fw-bold text-primary"  asp-controller="StudentExams" asp-action="Available"> الامتحانات </a> </li>
                                 <li class="nav-item">
                                         <a class="nav-link fw-bold text-danger" asp-controller="StudentExams" asp-action="History">
-                                            My Attempts
+                                            درجاتي
                                         </a>
                                     </li>
                              }
