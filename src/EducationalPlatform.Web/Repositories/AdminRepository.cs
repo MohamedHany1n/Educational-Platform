@@ -274,29 +274,32 @@ public class AdminRepository : IAdminRepository
         if (updated == 0)
             return (false, "تمت مراجعة هذا الطلب مسبقاً.");
 
+        // One enrollment per student and course, so at most one approved payment
+        // per enrollment. A second approved receipt would double-count revenue and
+        // leave the student charged twice for the same access; keep it pending for
+        // rejection/refund instead. Returning here rolls the approval back too.
+        var alreadyEnrolled = await _context.Enrollments
+            .AnyAsync(e => e.StudentId == request.StudentId && e.CourseId == request.CourseId);
+        if (alreadyEnrolled)
+            return (false, "الطالب مشترك بالفعل في هذا الكورس.");
+
         try
         {
-            var alreadyEnrolled = await _context.Enrollments
-                .AnyAsync(e => e.StudentId == request.StudentId && e.CourseId == request.CourseId);
-
-            if (!alreadyEnrolled)
+            _context.Enrollments.Add(new Enrollment
             {
-                _context.Enrollments.Add(new Enrollment
-                {
-                    StudentId = request.StudentId,
-                    CourseId = request.CourseId,
-                    PaymentRequestId = paymentRequestId,
-                    EnrolledAt = DateTime.UtcNow
-                });
-                await _context.SaveChangesAsync();
-            }
+                StudentId = request.StudentId,
+                CourseId = request.CourseId,
+                PaymentRequestId = paymentRequestId,
+                EnrolledAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
         }
         catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
-            // A different payment request for the same student and course was approved
-            // at the same time and its enrollment won the unique index. Keep this
-            // approval: the enrollment it paid for already exists. Any other failure
-            // escapes this catch and rolls the whole transaction back, approval included.
+            // Two approvals of different requests for the same student and course
+            // raced and the other enrollment won the unique index first. Roll this
+            // approval back with the transaction so this request stays pending.
+            return (false, "الطالب مشترك بالفعل في هذا الكورس.");
         }
 
         await transaction.CommitAsync();
@@ -304,7 +307,19 @@ public class AdminRepository : IAdminRepository
     }
 
     private static bool IsUniqueViolation(DbUpdateException ex)
-        => ex.InnerException is SqlException { Number: 2601 or 2627 };
+    {
+        // SQL Server (production): duplicate key / unique index violation.
+        if (ex.InnerException is SqlException { Number: 2601 or 2627 })
+            return true;
+        // SQLite (tests): SQLITE_CONSTRAINT. Detected without referencing the
+        // SQLite provider assembly so the web project stays provider-agnostic;
+        // the only insert in this transaction is the enrollment, so a
+        // constraint violation here can only be its unique index.
+        var inner = ex.InnerException;
+        return inner != null
+            && inner.GetType().Name == "SqliteException"
+            && Equals(inner.GetType().GetProperty("SqliteErrorCode")?.GetValue(inner), 19);
+    }
 
     public async Task<(bool Success, string Message)> RejectPaymentAsync(int paymentRequestId, int adminId, string rejectionReason)
     {

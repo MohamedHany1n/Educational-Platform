@@ -10,10 +10,10 @@ namespace EducationalPlatform.Tests;
 
 /// <summary>
 /// Regression tests for the admin payment-review and phone-uniqueness fixes.
-/// These run on SQLite in memory, so they cover the sequential business logic.
-/// The SQL Server-specific parts (the SqlException 2601/2627 filter and the
-/// concurrent-transaction race) cannot be reproduced here and stay untested
-/// until run against a real SQL Server.
+/// These run on SQLite in memory and cover the sequential business logic.
+/// Concurrent-request races live in PaymentConcurrencyTests. The SQL Server
+/// error-number translation (2601/2627 in IsUniqueViolation) is covered by
+/// reasoning only; SQLite's constraint error exercises the same branch shape.
 /// </summary>
 public class AdminRepositoryTests : IDisposable
 {
@@ -118,7 +118,7 @@ public class AdminRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task ApprovePayment_TwoRequestsForSameCourse_OnlyOneEnrollment()
+    public async Task ApprovePayment_TwoRequestsForSameCourse_SecondStaysPending()
     {
         var teacher = SeedUser("teacher@test.com", "01000000001");
         var student = SeedUser("student@test.com", "01000000002");
@@ -130,9 +130,13 @@ public class AdminRepositoryTests : IDisposable
         var secondResult = await _repository.ApprovePaymentAsync(second.Id, adminId: 1);
 
         Assert.True(firstResult.Success);
-        Assert.True(secondResult.Success);
-        // Both payments are recorded as approved, but the student is enrolled once.
+        // One enrollment per student and course: the second approval is refused
+        // (no revenue double-count) and its request stays pending for rejection/refund.
+        Assert.False(secondResult.Success);
+        Assert.Equal("الطالب مشترك بالفعل في هذا الكورس.", secondResult.Message);
         Assert.Single(await _context.Enrollments.ToListAsync());
+        Assert.Equal(PaymentStatus.Pending,
+            await _context.PaymentRequests.Where(p => p.Id == second.Id).Select(p => p.Status).SingleAsync());
     }
 
     [Fact]
@@ -165,6 +169,28 @@ public class AdminRepositoryTests : IDisposable
         Assert.False(approveAfterReject.Success);
         Assert.Equal(PaymentStatus.Rejected, await _context.PaymentRequests.Select(p => p.Status).SingleAsync());
         Assert.Empty(await _context.Enrollments.ToListAsync());
+    }
+
+    [Fact]
+    public async Task DuplicateEnrollment_IsRejectedByDatabase()
+    {
+        var teacher = SeedUser("teacher@test.com", "01000000001");
+        var student = SeedUser("student@test.com", "01000000002");
+        var course = SeedCourse(teacher);
+        var payment = SeedPayment(student, course, "TXN-1");
+        await _repository.ApprovePaymentAsync(payment.Id, adminId: 1);
+        var secondPayment = SeedPayment(student, course, "TXN-2");
+
+        // The unique index on (StudentId, CourseId) is the database arbitrator
+        // that turns a lost enrollment race into a violation the code translates.
+        _context.Enrollments.Add(new Enrollment
+        {
+            StudentId = student.Id,
+            CourseId = course.Id,
+            PaymentRequestId = secondPayment.Id,
+            EnrolledAt = DateTime.UtcNow
+        });
+        await Assert.ThrowsAsync<DbUpdateException>(() => _context.SaveChangesAsync());
     }
 
     [Fact]
