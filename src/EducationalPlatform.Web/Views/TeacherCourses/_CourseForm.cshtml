@@ -1,0 +1,33 @@
+@model EducationalPlatform.Web.Models.ViewModels.Teacher.CourseFormViewModel
+
+<div asp-validation-summary="All" class="text-danger"></div>
+<input type="hidden" asp-for="Id" />
+<input type="hidden" asp-for="ThumbnailPath" />
+
+<div class="mb-3">
+    <label asp-for="Title" class="form-label"></label>
+    <input asp-for="Title" class="form-control" />
+    <span asp-validation-for="Title" class="text-danger"></span>
+</div>
+<div class="mb-3">
+    <label asp-for="Description" class="form-label"></label>
+    <textarea asp-for="Description" class="form-control" rows="5"></textarea>
+    <span asp-validation-for="Description" class="text-danger"></span>
+</div>
+<div class="mb-3">
+    <label asp-for="Price" class="form-label"></label>
+    <input asp-for="Price" class="form-control" />
+    <span asp-validation-for="Price" class="text-danger"></span>
+</div>
+<div class="mb-3">
+    <label asp-for="Thumbnail" class="form-label"></label>
+    <input asp-for="Thumbnail" type="file" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+    @if (!string.IsNullOrEmpty(Model.ThumbnailPath))
+    {
+        <img src="@Model.ThumbnailPath" alt="" class="img-thumbnail mt-2" style="max-height:120px;" />
+    }
+</div>
+<div class="form-check mb-3">
+    <input asp-for="IsPublished" class="form-check-input" />
+    <label asp-for="IsPublished" class="form-check-label"></label>
+</div>

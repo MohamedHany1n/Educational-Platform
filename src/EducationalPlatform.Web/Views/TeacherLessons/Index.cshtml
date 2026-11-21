@@ -1,0 +1,63 @@
+@model EducationalPlatform.Web.Models.ViewModels.Teacher.CourseLessonsViewModel
+@{ ViewData["Title"] = "دروس الكورس"; }
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">دروس: @Model.CourseTitle</h2>
+        <a asp-controller="TeacherCourses" asp-action="Index" class="text-decoration-none">&larr; رجوع لكورساتي</a>
+    </div>
+    <a asp-action="Create" asp-route-courseId="@Model.CourseId" class="btn btn-primary">+ درس جديد</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @if (!Model.Lessons.Any())
+        {
+            <p class="text-muted text-center my-4">لسه مفيش دروس في الكورس ده. ابدأ بإضافة أول درس.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr><th>الترتيب</th><th>العنوان</th><th>الفيديو</th><th>التحكم</th></tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var l in Model.Lessons)
+                    {
+                        <tr>
+                            <td>@l.OrderIndex</td>
+                            <td>@l.Title</td>
+                            <td>
+                                <a href="@l.VideoUrl" target="_blank" rel="noopener noreferrer">فتح الفيديو</a>
+                            </td>
+                            <td>
+                                <a asp-action="Edit" asp-route-id="@l.Id" class="btn btn-sm btn-outline-primary">تعديل</a>
+                                <form asp-action="Delete" asp-route-id="@l.Id" asp-route-courseId="@Model.CourseId" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('هل أنت متأكد من حذف الدرس؟')">حذف</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

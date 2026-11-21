@@ -9,7 +9,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<EducationalPlatform.Web.Repositories.IAdminRepository, EducationalPlatform.Web.Repositories.AdminRepository>();
 builder.Services.AddScoped<EducationalPlatform.Web.Services.IAdminService, EducationalPlatform.Web.Services.AdminService>();
-
+builder.Services.AddScoped<EducationalPlatform.Web.Repositories.ITeacherCourseRepository, EducationalPlatform.Web.Repositories.TeacherCourseRepository>();
+builder.Services.AddScoped<EducationalPlatform.Web.Services.ITeacherCourseService, EducationalPlatform.Web.Services.TeacherCourseService>();
+builder.Services.AddScoped<EducationalPlatform.Web.Repositories.ITeacherLessonRepository, EducationalPlatform.Web.Repositories.TeacherLessonRepository>();
+builder.Services.AddScoped<EducationalPlatform.Web.Services.ITeacherLessonService, EducationalPlatform.Web.Services.TeacherLessonService>();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 

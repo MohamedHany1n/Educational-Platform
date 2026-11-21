@@ -1,0 +1,11 @@
+@model EducationalPlatform.Web.Models.ViewModels.Teacher.CourseFormViewModel
+@{ ViewData["Title"] = "تعديل الكورس"; }
+
+<h2 class="mb-4">تعديل الكورس</h2>
+<form asp-action="Edit" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
+    <partial name="_CourseForm" model="Model" />
+    <button type="submit" class="btn btn-primary">تحديث</button>
+    <a asp-action="Index" class="btn btn-secondary">إلغاء</a>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
