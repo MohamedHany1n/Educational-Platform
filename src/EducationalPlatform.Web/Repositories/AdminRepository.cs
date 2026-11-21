@@ -2,6 +2,7 @@
 using EducationalPlatform.Web.Models;
 using EducationalPlatform.Web.Models.Enums;
 using EducationalPlatform.Web.Models.ViewModels.Admin;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace EducationalPlatform.Web.Repositories;
@@ -248,35 +249,76 @@ public class AdminRepository : IAdminRepository
 
     public async Task<(bool Success, string Message)> ApprovePaymentAsync(int paymentRequestId, int adminId)
     {
-        var request = await _context.PaymentRequests.FindAsync(paymentRequestId);
+        var request = await _context.PaymentRequests
+            .Where(p => p.Id == paymentRequestId)
+            .Select(p => new { p.StudentId, p.CourseId })
+            .FirstOrDefaultAsync();
         if (request == null)
             return (false, "طلب الدفع غير موجود.");
 
-        if (request.Status != PaymentStatus.Pending)
+        // One transaction: the approval and the enrollment it creates commit together
+        // or not at all, so an approval never persists without its intended enrollment.
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        // Conditional update: it only succeeds while the request is still pending,
+        // so two admins cannot approve the same request at the same moment.
+        // Rejection competes on the exact same condition.
+        var updated = await _context.PaymentRequests
+            .Where(p => p.Id == paymentRequestId && p.Status == PaymentStatus.Pending)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(p => p.Status, PaymentStatus.Approved)
+                .SetProperty(p => p.ReviewedByAdminId, adminId)
+                .SetProperty(p => p.ReviewedAt, DateTime.UtcNow)
+                .SetProperty(p => p.RejectionReason, (string?)null));
+
+        if (updated == 0)
             return (false, "تمت مراجعة هذا الطلب مسبقاً.");
 
-        request.Status = PaymentStatus.Approved;
-        request.ReviewedByAdminId = adminId;
-        request.ReviewedAt = DateTime.UtcNow;
-        request.RejectionReason = null;
-
+        // One enrollment per student and course, so at most one approved payment
+        // per enrollment. A second approved receipt would double-count revenue and
+        // leave the student charged twice for the same access; keep it pending for
+        // rejection/refund instead. Returning here rolls the approval back too.
         var alreadyEnrolled = await _context.Enrollments
             .AnyAsync(e => e.StudentId == request.StudentId && e.CourseId == request.CourseId);
+        if (alreadyEnrolled)
+            return (false, "الطالب مشترك بالفعل في هذا الكورس.");
 
-        if (!alreadyEnrolled)
+        try
         {
-            var enrollment = new Enrollment
+            _context.Enrollments.Add(new Enrollment
             {
                 StudentId = request.StudentId,
                 CourseId = request.CourseId,
-                PaymentRequestId = request.Id,
+                PaymentRequestId = paymentRequestId,
                 EnrolledAt = DateTime.UtcNow
-            };
-            await _context.Enrollments.AddAsync(enrollment);
+            });
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            // Two approvals of different requests for the same student and course
+            // raced and the other enrollment won the unique index first. Roll this
+            // approval back with the transaction so this request stays pending.
+            return (false, "الطالب مشترك بالفعل في هذا الكورس.");
         }
 
-        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
         return (true, "تم قبول الإيصال وتفعيل اشتراك الطالب في الكورس بنجاح.");
+    }
+
+    private static bool IsUniqueViolation(DbUpdateException ex)
+    {
+        // SQL Server (production): duplicate key / unique index violation.
+        if (ex.InnerException is SqlException { Number: 2601 or 2627 })
+            return true;
+        // SQLite (tests): SQLITE_CONSTRAINT. Detected without referencing the
+        // SQLite provider assembly so the web project stays provider-agnostic;
+        // the only insert in this transaction is the enrollment, so a
+        // constraint violation here can only be its unique index.
+        var inner = ex.InnerException;
+        return inner != null
+            && inner.GetType().Name == "SqliteException"
+            && Equals(inner.GetType().GetProperty("SqliteErrorCode")?.GetValue(inner), 19);
     }
 
     public async Task<(bool Success, string Message)> RejectPaymentAsync(int paymentRequestId, int adminId, string rejectionReason)
@@ -284,19 +326,35 @@ public class AdminRepository : IAdminRepository
         if (string.IsNullOrWhiteSpace(rejectionReason))
             return (false, "يجب كتابة سبب رفض الإيصال.");
 
-        var request = await _context.PaymentRequests.FindAsync(paymentRequestId);
-        if (request == null)
+        var reason = rejectionReason.Trim();
+        if (reason.Length > 300)
+            return (false, "سبب الرفض طويل جداً (الحد الأقصى 300 حرف).");
+
+        var exists = await _context.PaymentRequests.AnyAsync(p => p.Id == paymentRequestId);
+        if (!exists)
             return (false, "طلب الدفع غير موجود.");
 
-        if (request.Status != PaymentStatus.Pending)
+        // Same conditional-update guard as approval: one review only.
+        var updated = await _context.PaymentRequests
+            .Where(p => p.Id == paymentRequestId && p.Status == PaymentStatus.Pending)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(p => p.Status, PaymentStatus.Rejected)
+                .SetProperty(p => p.ReviewedByAdminId, adminId)
+                .SetProperty(p => p.ReviewedAt, DateTime.UtcNow)
+                .SetProperty(p => p.RejectionReason, reason));
+
+        if (updated == 0)
             return (false, "تمت مراجعة هذا الطلب مسبقاً.");
 
-        request.Status = PaymentStatus.Rejected;
-        request.ReviewedByAdminId = adminId;
-        request.ReviewedAt = DateTime.UtcNow;
-        request.RejectionReason = rejectionReason.Trim();
-
-        await _context.SaveChangesAsync();
         return (true, "تم رفض طلب الدفع وتسجيل السبب.");
     }
+
+    public async Task<List<PaymentRequest>> GetRecentPaymentRequestsAsync(PaymentStatus status, int take)
+        => await _context.PaymentRequests
+            .Include(p => p.Student)
+            .Include(p => p.Course)
+            .Where(p => p.Status == status)
+            .OrderByDescending(p => p.CreatedAt)
+            .Take(take)
+            .ToListAsync();
 }

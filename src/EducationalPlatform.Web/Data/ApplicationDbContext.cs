@@ -1,4 +1,4 @@
-using EducationalPlatform.Web.Models;
+﻿using EducationalPlatform.Web.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +35,12 @@ public class ApplicationDbContext
         {
             e.Property(u => u.FullName).HasMaxLength(100).IsRequired();
             e.Property(u => u.ParentPhoneNumber).HasMaxLength(15);
+            // A phone number belongs to one account only. A unique index cannot sit on
+            // nvarchar(max), so the column is bounded at 450 (the standard Identity key
+            // length, far beyond any phone format). The index is filtered because
+            // SQL Server allows just one NULL in a plain unique index.
+            e.Property(u => u.PhoneNumber).HasMaxLength(450);
+            e.HasIndex(u => u.PhoneNumber).IsUnique().HasFilter("[PhoneNumber] IS NOT NULL");
         });
 
         // ---------- Parent <-> Student ----------
