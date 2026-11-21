@@ -17,6 +17,7 @@ public class AddQuestionViewModel
     [Range(0.01, 999, ErrorMessage = "درجة السؤال يجب أن تكون أكبر من صفر")]
     public decimal Marks { get; set; }
 
+    public int QuestionNumber { get; set; }
     public List<string> Options { get; set; } = new()
     {
         string.Empty,
