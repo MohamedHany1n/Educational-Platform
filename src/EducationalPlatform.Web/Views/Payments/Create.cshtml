@@ -1,0 +1,68 @@
+@using EducationalPlatform.Web.Models.Enums
+@inject IConfiguration Configuration
+@model EducationalPlatform.Web.Models.ViewModels.Student.SubmitPaymentViewModel
+@{
+    ViewData["Title"] = "اشتراك في كورس";
+    var course = (EducationalPlatform.Web.Models.ViewModels.Student.CourseDetailsViewModel)ViewBag.Course;
+    var instaPay = Configuration["PaymentInfo:InstaPay"];
+    var vodafoneCash = Configuration["PaymentInfo:VodafoneCash"];
+}
+
+<h2 class="mb-4">اشتراك في كورس: @course.Title</h2>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h5 class="mb-3">بيانات الدفع</h5>
+                <p>المبلغ المطلوب: <strong class="fs-5">@course.Price.ToString("N2") ج.م</strong></p>
+
+                <div class="alert alert-info">
+                    <h6>حسابات الدفع:</h6>
+                    <ul class="mb-0">
+                        <li>انستاباي: <strong dir="ltr">@(string.IsNullOrWhiteSpace(instaPay) ? "يُعلن لاحقاً" : instaPay)</strong></li>
+                        <li>فودافون كاش: <strong dir="ltr">@(string.IsNullOrWhiteSpace(vodafoneCash) ? "يُعلن لاحقاً" : vodafoneCash)</strong></li>
+                    </ul>
+                    <small>حوّل المبلغ بإحدى الطريقتين ثم ارفق صورة الإيصال ورقم العملية بالأسفل.</small>
+                </div>
+
+                <form asp-action="Create" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="CourseId" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label">طريقة الدفع</label>
+                        <select asp-for="PaymentMethod" class="form-select"
+                                asp-items="Html.GetEnumSelectList<PaymentMethod>()">
+                        </select>
+                        <span asp-validation-for="PaymentMethod" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="TransactionNumber" class="form-label"></label>
+                        <input asp-for="TransactionNumber" class="form-control" dir="ltr" />
+                        <span asp-validation-for="TransactionNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="SenderPhoneNumber" class="form-label"></label>
+                        <input asp-for="SenderPhoneNumber" class="form-control" dir="ltr" />
+                        <span asp-validation-for="SenderPhoneNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="receipt">صورة الإيصال</label>
+                        <input type="file" name="receipt" id="receipt" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">إرسال طلب الدفع</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

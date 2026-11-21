@@ -86,7 +86,8 @@
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                 </div>
                                                 <div class="modal-body text-center">
-                                                    <img src="@item.ReceiptImagePath" alt="Receipt" class="img-fluid rounded border" />
+                                                    @* Receipts are private files served through the authorized action, never wwwroot. *@
+                                                    <img src="@Url.Action("Receipt", "Payments", new { id = item.Id })" alt="Receipt" class="img-fluid rounded border" />
                                                 </div>
                                             </div>
                                         </div>

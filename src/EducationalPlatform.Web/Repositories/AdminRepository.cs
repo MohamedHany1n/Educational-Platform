@@ -251,7 +251,7 @@ public class AdminRepository : IAdminRepository
     {
         var request = await _context.PaymentRequests
             .Where(p => p.Id == paymentRequestId)
-            .Select(p => new { p.StudentId, p.CourseId })
+            .Select(p => new { p.StudentId, p.CourseId, CourseTitle = p.Course.Title })
             .FirstOrDefaultAsync();
         if (request == null)
             return (false, "طلب الدفع غير موجود.");
@@ -302,6 +302,18 @@ public class AdminRepository : IAdminRepository
             return (false, "الطالب مشترك بالفعل في هذا الكورس.");
         }
 
+        // In-app notification in the same transaction: the student is told
+        // about the approval exactly when it commits, never on a rollback.
+        _context.Notifications.Add(new Notification
+        {
+            UserId = request.StudentId,
+            Title = "تم قبول طلب الدفع",
+            Body = $"تم قبول إيصال الدفع وتفعيل اشتراكك في كورس {request.CourseTitle}.",
+            Url = "/Payments/Mine",
+            CreatedAt = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
+
         await transaction.CommitAsync();
         return (true, "تم قبول الإيصال وتفعيل اشتراك الطالب في الكورس بنجاح.");
     }
@@ -330,9 +342,15 @@ public class AdminRepository : IAdminRepository
         if (reason.Length > 300)
             return (false, "سبب الرفض طويل جداً (الحد الأقصى 300 حرف).");
 
-        var exists = await _context.PaymentRequests.AnyAsync(p => p.Id == paymentRequestId);
-        if (!exists)
+        var request = await _context.PaymentRequests
+            .Where(p => p.Id == paymentRequestId)
+            .Select(p => new { p.StudentId, CourseTitle = p.Course.Title })
+            .FirstOrDefaultAsync();
+        if (request == null)
             return (false, "طلب الدفع غير موجود.");
+
+        // One transaction: the rejection and its notification commit together.
+        await using var transaction = await _context.Database.BeginTransactionAsync();
 
         // Same conditional-update guard as approval: one review only.
         var updated = await _context.PaymentRequests
@@ -346,6 +364,17 @@ public class AdminRepository : IAdminRepository
         if (updated == 0)
             return (false, "تمت مراجعة هذا الطلب مسبقاً.");
 
+        _context.Notifications.Add(new Notification
+        {
+            UserId = request.StudentId,
+            Title = "تم رفض طلب الدفع",
+            Body = $"تم رفض طلب الدفع الخاص بكورس {request.CourseTitle}. السبب: {reason}",
+            Url = "/Payments/Mine",
+            CreatedAt = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
+
+        await transaction.CommitAsync();
         return (true, "تم رفض طلب الدفع وتسجيل السبب.");
     }
 

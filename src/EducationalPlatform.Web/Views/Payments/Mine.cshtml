@@ -1,0 +1,82 @@
+@using EducationalPlatform.Web.Models.Enums
+@model List<EducationalPlatform.Web.Models.ViewModels.Student.MyPaymentRequestViewModel>
+@{
+    ViewData["Title"] = "طلبات الدفع";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<h2 class="mb-4">طلبات الدفع الخاصة بي</h2>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <p class="text-muted text-center my-4">لا توجد طلبات دفع بعد. <a asp-controller="Courses" asp-action="Index">تصفح الكورسات</a>.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>الكورس</th>
+                            <th>المبلغ</th>
+                            <th>الوسيلة</th>
+                            <th>رقم العملية</th>
+                            <th>الإيصال</th>
+                            <th>الحالة</th>
+                            <th>التاريخ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.CourseTitle</td>
+                                <td class="fw-bold">@item.Amount.ToString("N2") ج.م</td>
+                                <td><span class="badge bg-secondary">@item.PaymentMethod</span></td>
+                                <td dir="ltr" style="text-align:right">@item.TransactionNumber</td>
+                                <td>
+                                    <a asp-action="Receipt" asp-route-id="@item.Id" target="_blank" class="btn btn-sm btn-outline-info">عرض</a>
+                                </td>
+                                <td>
+                                    @if (item.Status == PaymentStatus.Pending)
+                                    {
+                                        <span class="badge bg-warning text-dark">قيد المراجعة</span>
+                                    }
+                                    else if (item.Status == PaymentStatus.Approved)
+                                    {
+                                        <span class="badge bg-success">مقبول</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">مرفوض</span>
+                                        @if (!string.IsNullOrEmpty(item.RejectionReason))
+                                        {
+                                            <div class="small text-danger mt-1">السبب: @item.RejectionReason</div>
+                                        }
+                                    }
+                                </td>
+                                <td>@item.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd hh:mm tt")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
