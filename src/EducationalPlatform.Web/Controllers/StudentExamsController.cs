@@ -1,5 +1,5 @@
 ﻿using EducationalPlatform.Web.Data;
-using EducationalPlatform.Web.ViewModels;
+using EducationalPlatform.Web.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Data;
 using EducationalPlatform.Web.Models;
 using EducationalPlatform.Web.Models.Enums;
+using EducationalPlatform.Web.Models.ViewModels.Exam;
 
 namespace EducationalPlatform.Web.Controllers;
 
@@ -256,6 +257,7 @@ public class StudentExamsController : Controller
                 Text = q.Text,
                 Type = q.Type.ToString(),
                 Marks = q.Marks,
+                RequiredSelections = q.Options.Count(o => o.IsCorrect),
 
                 Options = q.Options
                     .OrderBy(o => o.Id)
@@ -487,6 +489,7 @@ public class StudentExamsController : Controller
                     if (!questionsById.TryGetValue(answer.QuestionId, out var question))
                         continue;
 
+
                     if (question.Type == QuestionType.MCQ)
                     {
                         var selectedIds = (submitted.SelectedOptionIds
@@ -494,14 +497,21 @@ public class StudentExamsController : Controller
                             .Distinct()
                             .ToList();
 
+                        int requiredSelections = Math.Max(
+                            question.Options.Count(o => o.IsCorrect), 1);
+
                         bool validOptions = selectedIds.All(optionId =>
                             question.Options.Any(o => o.Id == optionId));
 
                         if (!validOptions)
                             return BadRequest("Invalid question options.");
 
+                        if (selectedIds.Count != requiredSelections)
+                            return BadRequest("Incorrect number of selected options.");
+
                         ApplySelectedOptions(answer, selectedIds);
                     }
+
                     else if (question.Type == QuestionType.Essay)
                     {
                         answer.EssayText = submitted.EssayText?.Trim();
@@ -583,7 +593,8 @@ public class StudentExamsController : Controller
                 .Select(q => new
                 {
                     q.Type,
-                    OptionIds = q.Options.Select(o => o.Id).ToList()
+                    OptionIds = q.Options.Select(o => o.Id).ToList(),
+                    RequiredSelections = q.Options.Count(o => o.IsCorrect)
                 })
                 .FirstOrDefaultAsync();
 
@@ -607,8 +618,17 @@ public class StudentExamsController : Controller
                     .Distinct()
                     .ToList();
 
-                if (!selectedIds.All(optionId => question.OptionIds.Contains(optionId)))
+                if (!selectedIds.All(optionId =>
+                    question.OptionIds.Contains(optionId)))
+                {
                     return BadRequest("Invalid options.");
+                }
+
+                int requiredSelections = Math.Max(
+                    question.RequiredSelections, 1);
+
+                if (selectedIds.Count > requiredSelections)
+                    return BadRequest("Too many selected options.");
 
                 ApplySelectedOptions(answer, selectedIds);
             }
@@ -729,10 +749,19 @@ public class StudentExamsController : Controller
         }
     }
 
+
     private static bool IsAnswered(AttemptAnswer answer, Question question)
     {
         if (question.Type == QuestionType.MCQ)
-            return answer.SelectedOptions.Count > 0;
+        {
+            int requiredSelections = Math.Max(
+                question.Options.Count(o => o.IsCorrect), 1);
+
+            return answer.SelectedOptions
+                .Select(o => o.Id)
+                .Distinct()
+                .Count() == requiredSelections;
+        }
 
         if (question.Type == QuestionType.Essay)
             return !string.IsNullOrWhiteSpace(answer.EssayText);

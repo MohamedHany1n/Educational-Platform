@@ -1,8 +1,8 @@
 ﻿using EducationalPlatform.Web.Data;
 using EducationalPlatform.Web.Models;
 using EducationalPlatform.Web.Models.Enums;
+using EducationalPlatform.Web.Models.ViewModels.Exam;
 using EducationalPlatform.Web.Models.ViewModels;
-using EducationalPlatform.Web.ViewModels;
 using global::EducationalPlatform.Web.Data;
 using global::EducationalPlatform.Web.Models;
 using global::EducationalPlatform.Web.Models.ViewModels;
@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using EducationalPlatform.Web.Models.ViewModels.Exam;
 using System.Security.Claims;
 
 
@@ -274,6 +275,84 @@ public class ExamsController : Controller
 
         return View(exams);
     }
+
+
+
+    public async Task<IActionResult> Leaderboard(int id, int pageSize = 10)
+    {
+        if (!int.TryParse(
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            out int teacherId))
+        {
+            return Forbid();
+        }
+
+        // Allow only specific page sizes
+        if (pageSize != 10 && pageSize != 25 && pageSize != 50)
+            pageSize = 10;
+
+        // Verify that this exam belongs to the current teacher
+        var exam = await _context.Exams
+            .Where(e => e.Id == id && e.Course.TeacherId == teacherId)
+            .Select(e => new
+            {
+                e.Id,
+                e.Title
+            })
+            .FirstOrDefaultAsync();
+
+        if (exam == null)
+            return NotFound();
+
+        // Get the best graded score for each student
+        var students = await _context.ExamAttempts
+            .Where(a =>
+                a.ExamId == id &&
+                a.Status == AttemptStatus.Graded &&
+                a.TotalScore.HasValue)
+            .GroupBy(a => new
+            {
+                a.StudentId,
+                a.Student.FullName
+            })
+            .Select(g => new LeaderboardStudentViewModel
+            {
+                StudentId = g.Key.StudentId,
+                StudentName = g.Key.FullName,
+                BestScore = g.Max(a => a.TotalScore!.Value)
+            })
+            .OrderByDescending(s => s.BestScore)
+            .ThenBy(s => s.StudentName)
+            .ToListAsync();
+
+        // Assign competition ranking (1, 1, 3)
+        int currentRank = 0;
+        decimal? previousScore = null;
+
+        for (int i = 0; i < students.Count; i++)
+        {
+            if (previousScore != students[i].BestScore)
+                currentRank = i + 1;
+
+            students[i].Rank = currentRank;
+            previousScore = students[i].BestScore;
+        }
+
+        var model = new LeaderboardViewModel
+        {
+            ExamId = exam.Id,
+            ExamTitle = exam.Title,
+            TotalStudents = students.Count,
+            PageSize = pageSize,
+            Students = students.Take(pageSize).ToList()
+        };
+
+        return View(model);
+    }
+
+
+
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TogglePublish(int id)

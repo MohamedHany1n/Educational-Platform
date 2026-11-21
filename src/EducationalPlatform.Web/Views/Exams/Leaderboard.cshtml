@@ -1,0 +1,909 @@
+﻿@model EducationalPlatform.Web.Models.ViewModels.Exam.LeaderboardViewModel
+
+@{
+    ViewData["Title"] = "Champions Arena";
+
+    var maxScore = Model.Students.Any()
+        ? Model.Students.Max(s => s.BestScore)
+        : 0;
+
+    var podiumRanksAreUnique = new[] { 1, 2, 3 }
+        .All(rank => Model.Students.Count(s => s.Rank == rank) == 1);
+
+    var canShowPodium = Model.Students.Count >= 3 && podiumRanksAreUnique;
+
+    var first = Model.Students.FirstOrDefault(s => s.Rank == 1);
+    var second = Model.Students.FirstOrDefault(s => s.Rank == 2);
+    var third = Model.Students.FirstOrDefault(s => s.Rank == 3);
+
+    var rankingStudents = canShowPodium
+        ? Model.Students.Where(s => s.Rank > 3).ToList()
+        : Model.Students.ToList();
+}
+
+<div class="arena-page" dir="rtl">
+
+    <!-- Hero Section -->
+    <section class="arena-hero">
+        <div class="arena-hero-content">
+
+            <div class="arena-eyebrow">
+                <span class="arena-eyebrow-line"></span>
+                THE CHAMPIONS ARENA
+                <span class="arena-eyebrow-line"></span>
+            </div>
+
+            <div class="arena-trophy">🏆</div>
+
+            <h1>HALL OF <span>FAME</span></h1>
+
+            <p class="arena-subtitle">
+                لوحة الشرف وأبطال المنافسة
+            </p>
+
+            <div class="arena-exam-name">
+                <span class="exam-dot"></span>
+                @Model.ExamTitle
+            </div>
+
+        </div>
+
+        <div class="arena-hero-glow"></div>
+    </section>
+
+    <!-- Stats -->
+    <section class="arena-stats">
+
+        <div class="arena-stat-card">
+            <span class="stat-icon">👥</span>
+            <div>
+                <span class="stat-label">المتأهلون للتصنيف</span>
+                <strong>@Model.TotalStudents</strong>
+            </div>
+        </div>
+
+        <div class="arena-stat-card">
+            <span class="stat-icon">🏅</span>
+            <div>
+                <span class="stat-label">المراكز المعروضة</span>
+                <strong>@Model.Students.Count</strong>
+            </div>
+        </div>
+
+        <div class="arena-stat-card">
+            <span class="stat-icon">⭐</span>
+            <div>
+                <span class="stat-label">أعلى درجة</span>
+                <strong>
+                    @(Model.Students.Any()
+                        ? maxScore.ToString("0.##")
+                        : "—")
+                </strong>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- Page Size Selector -->
+    <section class="arena-controls">
+
+        <div class="arena-controls-label">
+            <span>⚔️</span>
+            عرض المتسابقين
+        </div>
+
+        <div class="arena-page-sizes">
+            @foreach (var size in new[] { 10, 25, 50 })
+            {
+                <a asp-action="Leaderboard"
+                   asp-route-id="@Model.ExamId"
+                   asp-route-pageSize="@size"
+                   class="@(Model.PageSize == size ? "active" : "")">
+                    @size
+                </a>
+            }
+        </div>
+
+    </section>
+
+    @if (!Model.Students.Any())
+    {
+        <!-- Empty State -->
+        <section class="arena-empty-state">
+            <div class="empty-trophy">🏆</div>
+
+            <h2>المنافسة لم تبدأ بعد</h2>
+
+            <p>
+                لا توجد نتائج مصححة حتى الآن.
+                بمجرد تصحيح محاولات الطلاب ستظهر هنا لوحة الأبطال.
+            </p>
+
+            <span class="empty-caption">YOUR ARENA IS WAITING</span>
+        </section>
+    }
+    else
+    {
+        <!-- Champions Podium -->
+        @if (canShowPodium)
+        {
+            <section class="podium-section">
+
+                <div class="podium-heading">
+                    <span>THE ELITE THREE</span>
+                    <h2>أبطال <span>المنافسة</span></h2>
+                    <p>هؤلاء هم أصحاب أعلى النتائج في هذا الامتحان</p>
+                </div>
+
+                <div class="podium">
+
+                    <!-- Second Place -->
+                    <div class="podium-item second-place">
+
+                        <div class="podium-crown">🥈</div>
+
+                        <div class="podium-avatar">
+                            @(string.IsNullOrWhiteSpace(second.StudentName)
+                                ? "?"
+                                : second.StudentName.Trim().Substring(0, 1))
+                        </div>
+
+                        <h3>@second.StudentName</h3>
+
+                        <span class="podium-score">
+                            @second.BestScore.ToString("0.##")
+                        </span>
+
+                        <span class="podium-label">SECOND PLACE</span>
+
+                        <div class="podium-block">
+                            <strong>02</strong>
+                        </div>
+
+                    </div>
+
+                    <!-- First Place -->
+                    <div class="podium-item first-place">
+
+                        <div class="podium-crown">👑</div>
+
+                        <div class="podium-avatar">
+                            @(string.IsNullOrWhiteSpace(first.StudentName)
+                                ? "?"
+                                : first.StudentName.Trim().Substring(0, 1))
+                        </div>
+
+                        <h3>@first.StudentName</h3>
+
+                        <span class="podium-score">
+                            @first.BestScore.ToString("0.##")
+                        </span>
+
+                        <span class="podium-label">CHAMPION</span>
+
+                        <div class="podium-block">
+                            <strong>01</strong>
+                        </div>
+
+                    </div>
+
+                    <!-- Third Place -->
+                    <div class="podium-item third-place">
+
+                        <div class="podium-crown">🥉</div>
+
+                        <div class="podium-avatar">
+                            @(string.IsNullOrWhiteSpace(third.StudentName)
+                                ? "?"
+                                : third.StudentName.Trim().Substring(0, 1))
+                        </div>
+
+                        <h3>@third.StudentName</h3>
+
+                        <span class="podium-score">
+                            @third.BestScore.ToString("0.##")
+                        </span>
+
+                        <span class="podium-label">THIRD PLACE</span>
+
+                        <div class="podium-block">
+                            <strong>03</strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+        }
+
+        <!-- Rankings Board -->
+        @if (rankingStudents.Any())
+        {
+            <section class="rankings-section">
+
+                <div class="rankings-heading">
+
+                    <div>
+                        <span class="rankings-eyebrow">THE CONTENDERS</span>
+                        <h2>قائمة <span>الأبطال</span></h2>
+                        <p>
+                            كل نقطة صنعت فارقًا في المنافسة
+                        </p>
+                    </div>
+
+                    <div class="rankings-count">
+                        @rankingStudents.Count متسابق
+                    </div>
+
+                </div>
+
+                <div class="rankings-list">
+
+                    @foreach (var student in rankingStudents)
+                    {
+                        var progress = maxScore > 0
+                            ? Math.Clamp((double)student.BestScore / (double)maxScore * 100, 0, 100)
+                            : 0;
+
+                        <div class="ranking-card">
+
+                            <div class="ranking-position">
+                                <span>#@student.Rank.ToString("00")</span>
+                            </div>
+
+                            <div class="ranking-avatar">
+                                @(string.IsNullOrWhiteSpace(student.StudentName)
+                                    ? "?"
+                                    : student.StudentName.Trim().Substring(0, 1))
+                            </div>
+
+                            <div class="ranking-info">
+
+                                <strong>@student.StudentName</strong>
+
+                                <div class="ranking-progress">
+                                    <div class="ranking-progress-fill"
+                                         style="width: @progress.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%">
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="ranking-score">
+                                <strong>@student.BestScore.ToString("0.##")</strong>
+                                <span>POINTS</span>
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+
+            </section>
+        }
+
+        @if (canShowPodium && !rankingStudents.Any())
+        {
+            <div class="arena-complete-message">
+                <span>✨</span>
+                هؤلاء هم جميع أبطال هذا الامتحان!
+            </div>
+        }
+    }
+
+    <!-- Footer -->
+    <div class="arena-footer">
+
+        <a asp-action="MyExams" class="arena-back-link">
+            ← العودة إلى امتحاناتي
+        </a>
+
+        <span>CHAMPIONS ARENA © @DateTime.Now.Year</span>
+
+    </div>
+
+</div>
+
+@section Styles {
+    <style>
+
+        .arena-page {
+            --arena-bg: #100f0d;
+            --arena-card: #1c1a16;
+            --arena-gold: #d6ae62;
+            --arena-gold-light: #f6dfa2;
+            --arena-muted: #a59b88;
+            --arena-border: rgba(214, 174, 98, .16);
+            min-height: 100vh;
+            padding: 35px 5%;
+            color: #f5efe3;
+            background: radial-gradient(ellipse at 50% 0%, rgba(214,174,98,.09), transparent 45%), var(--arena-bg);
+            font-family: inherit;
+        }
+
+        .arena-hero {
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            padding: 55px 20px 45px;
+            border: 1px solid var(--arena-border);
+            border-radius: 22px;
+            background: linear-gradient(145deg, #211e18, #12110f);
+        }
+
+        .arena-hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .arena-eyebrow,
+        .rankings-eyebrow {
+            color: var(--arena-gold);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 4px;
+        }
+
+        .arena-eyebrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .arena-eyebrow-line {
+            width: 35px;
+            height: 1px;
+            background: var(--arena-gold);
+        }
+
+        .arena-trophy {
+            margin: 25px 0 12px;
+            font-size: 58px;
+            filter: drop-shadow(0 0 18px rgba(214,174,98,.35));
+        }
+
+        .arena-hero h1 {
+            margin: 0;
+            font-size: clamp(32px, 5vw, 55px);
+            font-weight: 900;
+            letter-spacing: 3px;
+        }
+
+            .arena-hero h1 span,
+            .podium-heading h2 span,
+            .rankings-heading h2 span {
+                color: var(--arena-gold);
+            }
+
+        .arena-subtitle {
+            margin-top: 12px;
+            color: var(--arena-muted);
+        }
+
+        .arena-exam-name {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            margin-top: 20px;
+            padding: 10px 18px;
+            border: 1px solid var(--arena-border);
+            border-radius: 30px;
+            background: rgba(214,174,98,.07);
+            color: var(--arena-gold-light);
+            font-size: 14px;
+        }
+
+        .exam-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--arena-gold);
+        }
+
+        .arena-hero-glow {
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            top: -220px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 50%;
+            background: rgba(214,174,98,.12);
+            filter: blur(65px);
+        }
+
+        .arena-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin: 25px 0;
+        }
+
+        .arena-stat-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 22px;
+            border: 1px solid var(--arena-border);
+            border-radius: 15px;
+            background: var(--arena-card);
+        }
+
+        .stat-icon {
+            font-size: 27px;
+        }
+
+        .stat-label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--arena-muted);
+            font-size: 12px;
+        }
+
+        .arena-stat-card strong {
+            font-size: 25px;
+            color: var(--arena-gold-light);
+        }
+
+        .arena-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin: 30px 0;
+            padding: 15px 20px;
+            border: 1px solid var(--arena-border);
+            border-radius: 13px;
+            background: var(--arena-card);
+        }
+
+        .arena-controls-label {
+            color: var(--arena-muted);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+            .arena-controls-label span {
+                margin-left: 7px;
+            }
+
+        .arena-page-sizes {
+            display: flex;
+            gap: 8px;
+        }
+
+            .arena-page-sizes a {
+                min-width: 42px;
+                padding: 9px 14px;
+                text-align: center;
+                text-decoration: none;
+                color: var(--arena-muted);
+                background: #12110f;
+                border: 1px solid var(--arena-border);
+                border-radius: 9px;
+                font-size: 13px;
+                font-weight: 700;
+                transition: .2s ease;
+            }
+
+                .arena-page-sizes a:hover,
+                .arena-page-sizes a.active {
+                    color: #17130b;
+                    background: var(--arena-gold);
+                    border-color: var(--arena-gold);
+                    box-shadow: 0 0 15px rgba(214,174,98,.2);
+                }
+
+        .podium-section {
+            padding: 35px 0 20px;
+        }
+
+        .podium-heading,
+        .rankings-heading {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+            .podium-heading > span {
+                color: var(--arena-gold);
+                font-size: 11px;
+                letter-spacing: 4px;
+                font-weight: 800;
+            }
+
+            .podium-heading h2,
+            .rankings-heading h2 {
+                margin: 10px 0;
+                font-size: 28px;
+                font-weight: 800;
+            }
+
+            .podium-heading p,
+            .rankings-heading p {
+                color: var(--arena-muted);
+                font-size: 13px;
+            }
+
+        .podium {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 18px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .podium-item {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            align-items: center;
+            min-width: 0;
+            text-align: center;
+        }
+
+        .podium-crown {
+            margin-bottom: 12px;
+            font-size: 30px;
+        }
+
+        .podium-avatar,
+        .ranking-avatar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border-radius: 50%;
+            font-weight: 900;
+            color: #17130b;
+            background: linear-gradient(145deg, var(--arena-gold-light), var(--arena-gold));
+        }
+
+        .podium-avatar {
+            width: 70px;
+            height: 70px;
+            margin-bottom: 12px;
+            border: 3px solid rgba(255,255,255,.3);
+            font-size: 25px;
+        }
+
+        .first-place .podium-avatar {
+            width: 88px;
+            height: 88px;
+            border-color: var(--arena-gold);
+            box-shadow: 0 0 25px rgba(214,174,98,.3);
+        }
+
+        .podium-item h3 {
+            max-width: 100%;
+            overflow-wrap: anywhere;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .podium-score {
+            margin: 5px 0;
+            color: var(--arena-gold-light);
+            font-size: 22px;
+            font-weight: 900;
+        }
+
+        .podium-label {
+            margin: 5px 0 12px;
+            color: var(--arena-muted);
+            font-size: 9px;
+            letter-spacing: 2px;
+            font-weight: 800;
+        }
+
+        .podium-block {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 110px;
+            border: 1px solid var(--arena-border);
+            border-bottom: 0;
+            border-radius: 12px 12px 0 0;
+            background: linear-gradient(180deg, rgba(214,174,98,.15), rgba(214,174,98,.03));
+        }
+
+            .podium-block strong {
+                color: rgba(246,223,162,.5);
+                font-size: 45px;
+            }
+
+        .first-place .podium-block {
+            min-height: 155px;
+            background: linear-gradient(180deg, rgba(214,174,98,.28), rgba(214,174,98,.05));
+            border-color: rgba(214,174,98,.4);
+        }
+
+        .third-place .podium-block {
+            min-height: 85px;
+        }
+
+        .rankings-section {
+            margin-top: 50px;
+        }
+
+        .rankings-heading {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            text-align: right;
+        }
+
+            .rankings-heading h2 {
+                margin-top: 8px;
+            }
+
+        .rankings-count {
+            padding: 9px 14px;
+            border: 1px solid var(--arena-border);
+            border-radius: 20px;
+            color: var(--arena-gold);
+            font-size: 12px;
+        }
+
+        .rankings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ranking-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 15px 20px;
+            border: 1px solid var(--arena-border);
+            border-radius: 13px;
+            background: var(--arena-card);
+            transition: .2s ease;
+        }
+
+            .ranking-card:hover {
+                transform: translateY(-2px);
+                border-color: rgba(214,174,98,.45);
+                background: #242119;
+            }
+
+        .ranking-position {
+            min-width: 38px;
+            color: var(--arena-gold);
+            font-size: 16px;
+            font-weight: 900;
+        }
+
+        .ranking-avatar {
+            width: 43px;
+            height: 43px;
+            font-size: 17px;
+        }
+
+        .ranking-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+            .ranking-info > strong {
+                display: block;
+                margin-bottom: 9px;
+                overflow-wrap: anywhere;
+                font-size: 14px;
+            }
+
+        .ranking-progress {
+            height: 5px;
+            overflow: hidden;
+            border-radius: 10px;
+            background: #353027;
+        }
+
+        .ranking-progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #9e7939, var(--arena-gold-light));
+        }
+
+        .ranking-score {
+            min-width: 75px;
+            text-align: left;
+        }
+
+            .ranking-score strong {
+                display: block;
+                color: var(--arena-gold-light);
+                font-size: 19px;
+            }
+
+            .ranking-score span {
+                color: var(--arena-muted);
+                font-size: 9px;
+                letter-spacing: 1px;
+            }
+
+        .arena-empty-state {
+            margin: 45px auto;
+            max-width: 600px;
+            padding: 55px 25px;
+            text-align: center;
+            border: 1px solid var(--arena-border);
+            border-radius: 20px;
+            background: var(--arena-card);
+        }
+
+        .empty-trophy {
+            margin-bottom: 18px;
+            font-size: 55px;
+            opacity: .8;
+        }
+
+        .arena-empty-state h2 {
+            margin-bottom: 12px;
+            color: var(--arena-gold-light);
+            font-size: 24px;
+        }
+
+        .arena-empty-state p {
+            max-width: 420px;
+            margin: 0 auto 20px;
+            color: var(--arena-muted);
+            line-height: 1.9;
+            font-size: 13px;
+        }
+
+        .empty-caption {
+            color: var(--arena-gold);
+            font-size: 10px;
+            letter-spacing: 3px;
+            font-weight: 800;
+        }
+
+        .arena-complete-message {
+            margin: 30px 0;
+            padding: 18px;
+            text-align: center;
+            color: var(--arena-gold-light);
+            border: 1px solid var(--arena-border);
+            border-radius: 12px;
+            background: var(--arena-card);
+        }
+
+        .arena-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 55px;
+            padding-top: 20px;
+            border-top: 1px solid var(--arena-border);
+            color: var(--arena-muted);
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+
+        .arena-back-link {
+            color: var(--arena-gold);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+            .arena-back-link:hover {
+                color: var(--arena-gold-light);
+            }
+
+        @@media (max-width: 768px) {
+
+            .arena-page {
+                padding: 20px 4%;
+            }
+
+            .arena-stats {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .arena-stat-card {
+                padding: 15px;
+            }
+
+            .podium {
+                gap: 8px;
+            }
+
+            .podium-avatar {
+                width: 55px;
+                height: 55px;
+            }
+
+            .first-place .podium-avatar {
+                width: 68px;
+                height: 68px;
+            }
+
+            .podium-item h3 {
+                font-size: 12px;
+            }
+
+            .podium-score {
+                font-size: 17px;
+            }
+
+            .podium-label {
+                font-size: 8px;
+                letter-spacing: 1px;
+            }
+
+            .podium-block {
+                min-height: 85px;
+            }
+
+            .first-place .podium-block {
+                min-height: 120px;
+            }
+
+            .third-place .podium-block {
+                min-height: 65px;
+            }
+
+            .rankings-heading {
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .ranking-card {
+                gap: 10px;
+                padding: 13px 10px;
+            }
+
+            .ranking-position {
+                min-width: 32px;
+                font-size: 13px;
+            }
+
+            .ranking-avatar {
+                width: 36px;
+                height: 36px;
+            }
+
+            .arena-footer {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @@media (max-width: 480px) {
+
+            .arena-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .arena-hero {
+                padding: 40px 12px;
+            }
+
+            .arena-eyebrow {
+                font-size: 9px;
+                letter-spacing: 2px;
+            }
+
+            .ranking-score {
+                min-width: 55px;
+            }
+
+                .ranking-score strong {
+                    font-size: 16px;
+                }
+
+            .podium-crown {
+                font-size: 23px;
+            }
+        }
+    </style>
+}

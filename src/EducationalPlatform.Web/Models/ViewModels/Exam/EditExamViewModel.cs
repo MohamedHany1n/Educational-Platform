@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace EducationalPlatform.Web.ViewModels;
+namespace EducationalPlatform.Web.Models.ViewModels.Exam;
 
 public class EditExamViewModel
 {

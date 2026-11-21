@@ -1,6 +1,6 @@
 ﻿using EducationalPlatform.Web.Models.Enums;
 
-namespace EducationalPlatform.Web.ViewModels;
+namespace EducationalPlatform.Web.Models.ViewModels.Exam;
 
 public class ManageQuestionViewModel
 {
