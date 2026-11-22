@@ -35,13 +35,22 @@
             <div class="table-responsive">
                 <table class="table table-bordered table-hover align-middle">
                     <thead class="table-light">
-                        <tr><th>الترتيب</th><th>العنوان</th><th>الفيديو</th><th>التحكم</th></tr>
+                        <tr><th style="width:110px">الترتيب</th><th>العنوان</th><th>الفيديو</th><th>التحكم</th></tr>
                     </thead>
                     <tbody>
-                    @foreach (var l in Model.Lessons)
+                    @for (var i = 0; i < Model.Lessons.Count; i++)
                     {
+                        var l = Model.Lessons[i];
                         <tr>
-                            <td>@l.OrderIndex</td>
+                            <td class="text-nowrap">
+                                <span class="me-2">@l.OrderIndex</span>
+                                <form asp-action="Move" asp-route-id="@l.Id" asp-route-courseId="@Model.CourseId" asp-route-up="true" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="لأعلى" disabled="@(i == 0)">&uarr;</button>
+                                </form>
+                                <form asp-action="Move" asp-route-id="@l.Id" asp-route-courseId="@Model.CourseId" asp-route-up="false" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="لأسفل" disabled="@(i == Model.Lessons.Count - 1)">&darr;</button>
+                                </form>
+                            </td>
                             <td>@l.Title</td>
                             <td>
                                 <a href="@l.VideoUrl" target="_blank" rel="noopener noreferrer">فتح الفيديو</a>

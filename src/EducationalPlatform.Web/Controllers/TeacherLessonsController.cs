@@ -79,6 +79,15 @@ public class TeacherLessonsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Move(int id, int courseId, bool up)
+    {
+        var (success, message) = await _service.MoveAsync(id, CurrentUserId, up);
+        if (!success) TempData["ErrorMessage"] = message;
+        return RedirectToAction(nameof(Index), new { courseId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id, int courseId)
     {
         var (success, message) = await _service.DeleteAsync(id, CurrentUserId);
