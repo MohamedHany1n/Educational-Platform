@@ -53,6 +53,11 @@
                             <td>@c.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</td>
                             <td>
                                 <a asp-controller="TeacherLessons" asp-action="Index" asp-route-courseId="@c.Id" class="btn btn-sm btn-outline-success">الدروس</a>
+                                <form asp-action="TogglePublish" asp-route-id="@c.Id" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm @(c.IsPublished ? "btn-outline-secondary" : "btn-outline-success")">
+                                        @(c.IsPublished ? "إلغاء النشر" : "نشر")
+                                    </button>
+                                </form>
                                 <a asp-action="Edit" asp-route-id="@c.Id" class="btn btn-sm btn-outline-primary">تعديل</a>
                                 <form asp-action="Delete" asp-route-id="@c.Id" method="post" class="d-inline">
                                     <button type="submit" class="btn btn-sm btn-outline-danger"

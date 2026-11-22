@@ -70,6 +70,15 @@ public class TeacherCoursesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> TogglePublish(int id)
+    {
+        var (success, message) = await _service.TogglePublishAsync(id, CurrentUserId);
+        TempData[success ? "SuccessMessage" : "ErrorMessage"] = message;
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
         var (success, message) = await _service.DeleteAsync(id, CurrentUserId);
