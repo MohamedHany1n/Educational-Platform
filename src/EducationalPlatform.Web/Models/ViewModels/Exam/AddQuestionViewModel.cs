@@ -1,12 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using EducationalPlatform.Web.Models.Enums;
 
-namespace EducationalPlatform.Web.ViewModels;
+namespace EducationalPlatform.Web.Models.ViewModels.Exam;
 
-public class EditQuestionViewModel
+public class AddQuestionViewModel
 {
-    public int Id { get; set; }
-
+    [Required]
     public int ExamId { get; set; }
 
     [Required(ErrorMessage = "نص السؤال مطلوب")]
@@ -18,6 +17,7 @@ public class EditQuestionViewModel
     [Range(0.01, 999, ErrorMessage = "درجة السؤال يجب أن تكون أكبر من صفر")]
     public decimal Marks { get; set; }
 
+    public int QuestionNumber { get; set; }
     public List<string> Options { get; set; } = new()
     {
         string.Empty,

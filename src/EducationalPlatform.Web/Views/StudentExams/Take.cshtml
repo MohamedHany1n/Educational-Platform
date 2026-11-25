@@ -1,4 +1,4 @@
-﻿@model EducationalPlatform.Web.ViewModels.TakeExamViewModel;
+﻿@model EducationalPlatform.Web.Models.ViewModels.Exam.TakeExamViewModel
 
 @{
     ViewData["Title"] = "حل الامتحان";
@@ -77,10 +77,30 @@
 
                         <div class="card-body">
 
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="mb-0">
-                                    السؤال @(i + 1)
-                                </h5>
+                            @{
+                                var requiredSelections = Math.Max(question.RequiredSelections, 1);
+                                var selectionInstruction = requiredSelections switch
+                                {
+                                    2 => "يجب اختيار إجابتين",
+                                    3 => "يجب اختيار 3 إجابات",
+                                    4 => "يجب اختيار 4 إجابات",
+                                    _ => $"يجب اختيار {requiredSelections} إجابة"
+                                };
+                            }
+
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                <div class="d-flex align-items-center flex-wrap gap-2">
+                                    <h5 class="mb-0">
+                                        السؤال @(i + 1)
+                                    </h5>
+
+                                    @if (requiredSelections > 1)
+                                    {
+                                        <span class="badge rounded-pill bg-warning text-dark px-3 py-2">
+                                            @selectionInstruction
+                                        </span>
+                                    }
+                                </div>
 
                                 <button type="button"
                                         class="btn btn-sm btn-outline-secondary flag-button">
@@ -100,21 +120,32 @@
 
                             @if (question.Type == "MCQ")
                             {
-                                <div class="mt-3">
+                                <div class="mt-3 mcq-options"
+                                     data-question-id="@question.Id"
+                                     data-required-selections="@requiredSelections">
+
                                     @foreach (var option in question.Options)
                                     {
                                         <div class="form-check mb-2">
                                             <input class="form-check-input mcq-option"
-                                                   type="checkbox"
+                                                   type="@(requiredSelections == 1 ? "radio" : "checkbox")"
                                                    name="Answers[@i].SelectedOptionIds"
                                                    value="@option.Id"
                                                    checked="@option.IsSelected"
-                                                   data-question-id="@question.Id" />
+                                                   data-question-id="@question.Id"
+                                                   data-required-selections="@requiredSelections" />
 
                                             <label class="form-check-label">
                                                 @option.Text
                                             </label>
                                         </div>
+                                    }
+
+                                    @if (requiredSelections > 1)
+                                    {
+                                        <small class="selection-limit-message text-danger d-none">
+                                            يمكنك اختيار @requiredSelections إجابات فقط.
+                                        </small>
                                     }
                                 </div>
                             }
@@ -233,7 +264,7 @@
         <h4>لم يتم إكمال الامتحان</h4>
 
         <p>
-            لسه فيه أسئلة من غير إجابة.
+            فيه أسئلة لم تستوفِ عدد الإجابات المطلوب.
             راجع الأسئلة التالية قبل تسليم الامتحان:
         </p>
 
@@ -525,18 +556,48 @@
                 return ok && unsaved.size === 0;
             }
 
-            // MCQ: save whenever a checkbox changes.
+            // MCQ: radio for one required answer, checkboxes for multiple answers.
+            // Multiple-answer questions cannot exceed the number required by the teacher.
             document.querySelectorAll(".mcq-option").forEach(input => {
                 input.addEventListener("change", () => {
                     const questionId = input.dataset.questionId;
-
-                    const selectedIds = Array.from(
+                    const requiredSelections = Number(input.dataset.requiredSelections || 1);
+                    const questionOptions = Array.from(
                         document.querySelectorAll(
-                            `.mcq-option[data-question-id="${questionId}"]:checked`
+                            `.mcq-option[data-question-id="${questionId}"]`
                         )
-                    ).map(option => option.value);
+                    );
+
+                    const selectedOptions = questionOptions.filter(option => option.checked);
+                    const limitMessage = input.closest(".mcq-options")
+                        ?.querySelector(".selection-limit-message");
+
+                    if (
+                        input.type === "checkbox" &&
+                        input.checked &&
+                        selectedOptions.length > requiredSelections
+                    ) {
+                        input.checked = false;
+
+                        if (limitMessage) {
+                            limitMessage.classList.remove("d-none");
+                            limitMessage.textContent =
+                                `يمكنك اختيار ${requiredSelections} إجابات فقط.`;
+                        }
+
+                        return;
+                    }
+
+                    if (limitMessage) {
+                        limitMessage.classList.add("d-none");
+                    }
+
+                    const selectedIds = questionOptions
+                        .filter(option => option.checked)
+                        .map(option => option.value);
 
                     queueSave(questionId, { type: "MCQ", selectedIds });
+                    updateNavigator();
                 });
             });
 
@@ -575,7 +636,14 @@
                 const mcqOptions = question.querySelectorAll(".mcq-option");
 
                 if (mcqOptions.length > 0) {
-                    return Array.from(mcqOptions).some(option => option.checked);
+                    const selectedCount = Array.from(mcqOptions)
+                        .filter(option => option.checked).length;
+
+                    const requiredSelections = Number(
+                        question.querySelector(".mcq-options")?.dataset.requiredSelections || 1
+                    );
+
+                    return selectedCount === requiredSelections;
                 }
 
                 const essay = question.querySelector(".essay-answer");

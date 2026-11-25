@@ -1,4 +1,4 @@
-﻿namespace EducationalPlatform.Web.ViewModels;
+﻿namespace EducationalPlatform.Web.Models.ViewModels.Exam;
 
 public class TakeExamViewModel
 {
@@ -21,6 +21,7 @@ public class TakeQuestionViewModel
 
     public string? EssayText { get; set; }
 
+    public int RequiredSelections { get; set; } = 1;
     public List<TakeOptionViewModel> Options { get; set; }
         = new();
 }

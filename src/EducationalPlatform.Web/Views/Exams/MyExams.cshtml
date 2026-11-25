@@ -1,4 +1,4 @@
-﻿@model List<EducationalPlatform.Web.ViewModels.MyExamViewModel>
+﻿@model List<EducationalPlatform.Web.Models.ViewModels.Exam.MyExamViewModel>
 
 @{
     ViewData["Title"] = "امتحاناتي";
@@ -110,6 +110,12 @@
                                        class="btn btn-sm btn-info">
                                         إدارة الأسئلة
                                     </a>
+
+                                    <a asp-action="Leaderboard"
+                                        asp-route-id="@exam.Id"
+                                        class="btn btn-sm btn-dark">
+                                            الترتيب
+                                                    </a>
 
                                     <form asp-action="DeleteExam"
                                           asp-route-id="@exam.Id"
