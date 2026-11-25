@@ -115,6 +115,29 @@ public class TeacherLessonService : ITeacherLessonService
         return (true, "تم حذف الدرس.");
     }
 
+    public async Task<(bool Success, string Message)> MoveAsync(int lessonId, int teacherId, bool up)
+    {
+        var lesson = await _repo.GetLessonAsync(lessonId, teacherId);
+        if (lesson == null) return (false, "الدرس غير موجود.");
+
+        // Tracked entities, ordered by OrderIndex then Id.
+        var lessons = await _repo.GetLessonsByCourseAsync(lesson.CourseId);
+        var index = lessons.FindIndex(l => l.Id == lessonId);
+        var target = up ? index - 1 : index + 1;
+
+        // Already first or last: nothing to do.
+        if (target < 0 || target >= lessons.Count) return (true, string.Empty);
+
+        (lessons[index], lessons[target]) = (lessons[target], lessons[index]);
+
+        // Renumber 1..n so duplicate or gapped OrderIndex values are cleaned up too.
+        for (var i = 0; i < lessons.Count; i++)
+            lessons[i].OrderIndex = i + 1;
+
+        await _repo.SaveChangesAsync();
+        return (true, string.Empty);
+    }
+
     private static bool IsValidVideoUrl(string url)
         => Uri.TryCreate(url, UriKind.Absolute, out var uri)
            && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);

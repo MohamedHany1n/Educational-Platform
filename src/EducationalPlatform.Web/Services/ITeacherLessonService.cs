@@ -10,4 +10,5 @@ public interface ITeacherLessonService
     Task<(bool Success, string Message)> CreateAsync(LessonFormViewModel model, int teacherId);
     Task<(bool Success, string Message)> UpdateAsync(LessonFormViewModel model, int teacherId);
     Task<(bool Success, string Message)> DeleteAsync(int lessonId, int teacherId);
+    Task<(bool Success, string Message)> MoveAsync(int lessonId, int teacherId, bool up);
 }

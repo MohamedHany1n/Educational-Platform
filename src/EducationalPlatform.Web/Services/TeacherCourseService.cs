@@ -76,10 +76,12 @@ public class TeacherCourseService : ITeacherCourseService
         var course = await _repo.GetCourseAsync(model.Id, teacherId);
         if (course == null) return (false, "الكورس غير موجود.");
 
+        string? oldThumbnail = null;
         if (model.Thumbnail != null)
         {
             var (ok, filePath, error) = await SaveThumbnailAsync(model.Thumbnail);
             if (!ok) return (false, error!);
+            oldThumbnail = course.ThumbnailPath;
             course.ThumbnailPath = filePath;
         }
 
@@ -89,6 +91,7 @@ public class TeacherCourseService : ITeacherCourseService
         course.IsPublished = model.IsPublished;
 
         await _repo.SaveChangesAsync();
+        DeleteThumbnailFile(oldThumbnail);
         return (true, "تم تعديل الكورس بنجاح.");
     }
 
@@ -100,8 +103,36 @@ public class TeacherCourseService : ITeacherCourseService
         if (await _repo.HasDependenciesAsync(id))
             return (false, "لا يمكن حذف كورس عليه اشتراكات أو إيصالات أو امتحانات. ألغِ نشره بدلاً من الحذف.");
 
+        var thumbnail = course.ThumbnailPath;
         await _repo.DeleteCourseAsync(course);
+        DeleteThumbnailFile(thumbnail);
         return (true, "تم حذف الكورس.");
+    }
+
+    public async Task<(bool Success, string Message)> TogglePublishAsync(int id, int teacherId)
+    {
+        var course = await _repo.GetCourseAsync(id, teacherId);
+        if (course == null) return (false, "الكورس غير موجود.");
+
+        course.IsPublished = !course.IsPublished;
+        await _repo.SaveChangesAsync();
+        return (true, course.IsPublished ? "تم نشر الكورس." : "تم إلغاء نشر الكورس.");
+    }
+
+    // Deletes an uploaded thumbnail. Only touches files inside uploads/thumbnails.
+    private void DeleteThumbnailFile(string? webPath)
+    {
+        if (string.IsNullOrWhiteSpace(webPath) || !webPath.StartsWith("/uploads/thumbnails/")) return;
+
+        try
+        {
+            var fullPath = Path.Combine(_env.WebRootPath, "uploads", "thumbnails", Path.GetFileName(webPath));
+            if (File.Exists(fullPath)) File.Delete(fullPath);
+        }
+        catch (IOException)
+        {
+            // A leftover file is harmless; never fail the request because of it.
+        }
     }
 
     private async Task<(bool Ok, string? FilePath, string? Error)> SaveThumbnailAsync(IFormFile file)
